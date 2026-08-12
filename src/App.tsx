@@ -16,47 +16,38 @@ import Auth from "./Auth";
 
 setWorkerUrl(workerUrl);
 
-type DraftStick = {
-  lng: number;
-  lat: number;
-};
+import type {
+  DraftStick,
+  Stick,
+  Profile,
+  RankingEntry,
+  StickConfirmation,
+  StickReport,
+  StickStatus,
+} from "./types";
 
-type Stick = {
-  id: string;
-  latitude: number;
-  longitude: number;
-  description: string;
-  photo_path: string | null;
-  user_id: string | null;
-};
+import Ranking from "./components/Ranking";
+import UserPanel from "./components/UserPanel";
+import StickForm from "./components/StickForm";
+import StickDetails from "./components/StickDetails";
 
-type Profile = {
-  id: string;
-  username: string;
-};
+import {
+  getSticks,
+  createStick,
+  getConfirmations,
+  confirmStickPresence,
+  getReports,
+  reportStickMissing,
+  getStickStatuses,
+} from "./services/sticks";
 
-type RankingEntry = {
-  user_id: string;
-  username: string;
-  stick_count: number;
-};
+import { getProfile } from "./services/profiles";
+import { getRanking } from "./services/ranking";
 
-type StickConfirmation = {
-  id: string;
-  stick_id: string;
-  user_id: string;
-  created_at: string;
-  updated_at: string;
-};
-
-type StickReport = {
-  id: string;
-  stick_id: string;
-  user_id: string;
-  reason: string;
-  created_at: string;
-  updated_at: string;
-};
+import {
+  uploadStickPhoto,
+  getStickPhotoUrl,
+} from "./services/storage";
 
 function App() {
   const [user, setUser] = useState<User | null>(null);
@@ -65,6 +56,8 @@ function App() {
   const [ranking, setRanking] = useState<RankingEntry[]>([]);
   const [confirmations, setConfirmations] = useState<StickConfirmation[]>([]);
   const [reports, setReports] = useState<StickReport[]>([]);
+  const [stickStatuses, setStickStatuses] = useState<Record<string, StickStatus>>({});
+  
 
   const mapContainer = useRef<HTMLDivElement>(null);
   const mapRef = useRef<Map | null>(null);
@@ -80,18 +73,22 @@ function App() {
   const [photo, setPhoto] = useState<File | null>(null);
   
   async function loadProfile(userId: string) {
-    const { data, error } = await supabase
-      .from("profiles")
-      .select("id, username")
-      .eq("id", userId)
-      .single();
-
-    if (error) {
+    try {
+      const data = await getProfile(userId);
+      setProfile(data);
+    } catch (error) {
       console.error("Erreur chargement profil :", error);
-      return;
     }
+  }
 
-    setProfile(data);
+  async function loadSticks() {
+    try {
+      const data = await getSticks();
+
+      setSticks(data);
+    } catch (error) {
+      console.error("Erreur chargement :", error);
+    }
   }
 
   async function loadStickAuthor(userId: string | null) {
@@ -100,64 +97,67 @@ function App() {
       return;
     }
 
-    const { data, error } = await supabase
-      .from("profiles")
-      .select("id, username")
-      .eq("id", userId)
-      .single();
-
-    if (error) {
+    try {
+      const data = await getProfile(userId);
+      setSelectedAuthor(data);
+    } catch (error) {
       console.error("Erreur chargement auteur :", error);
       setSelectedAuthor(null);
-      return;
     }
-
-    setSelectedAuthor(data);
   }
 
   async function loadRanking() {
-    const { data, error } = await supabase
-      .from("contributor_ranking")
-      .select("*")
-      .order("stick_count", { ascending: false });
-
-    if (error) {
+    try {
+      const data = await getRanking();
+      setRanking(data);
+    } catch (error) {
       console.error("Erreur classement :", error);
-      return;
     }
-
-    setRanking(data);
   }
 
   async function loadConfirmations(stickId: string) {
-    const { data, error } = await supabase
-      .from("stick_confirmations")
-      .select("*")
-      .eq("stick_id", stickId)
-      .order("updated_at", { ascending: false });
+    try {
+      const data = await getConfirmations(stickId);
 
-    if (error) {
-      console.error("Erreur chargement confirmations :", error);
-      return;
+      setConfirmations(data);
+    } catch (error) {
+      console.error(
+        "Erreur chargement confirmations :",
+        error
+      );
     }
-
-    setConfirmations(data);
   }
 
   async function loadReports(stickId: string) {
-    const { data, error } = await supabase
-      .from("stick_reports")
-      .select("*")
-      .eq("stick_id", stickId)
-      .order("updated_at", { ascending: false });
+    try {
+      const data = await getReports(stickId);
 
-    if (error) {
-      console.error("Erreur chargement signalements :", error);
-      return;
+      setReports(data);
+    } catch (error) {
+      console.error(
+        "Erreur chargement signalements :",
+        error
+      );
     }
-
-    setReports(data);
   }
+
+  async function loadStickStatuses() {
+    try {
+      const data = await getStickStatuses();
+
+      setStickStatuses(data);
+    } catch (error) {
+      console.error(
+        "Erreur chargement statuts :",
+        error
+      );
+    }
+  }
+
+  useEffect(() => {
+    loadSticks();
+    loadStickStatuses();
+  }, []);
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
@@ -266,75 +266,41 @@ function App() {
   async function saveStick() {
     if (!draftStick || !user) return;
 
-    let filePath: string | null = null;
+    try {
+      let filePath: string | null = null;
 
-    // 1. Upload de la photo
-    if (photo) {
-      const extension = photo.name.split(".").pop();
-
-      filePath = `sticks/${crypto.randomUUID()}.${extension}`;
-
-      const { error: uploadError } = await supabase.storage
-        .from("stick-photos")
-        .upload(filePath, photo);
-
-      if (uploadError) {
-        console.error("Erreur upload photo :", uploadError);
-        return;
+      if (photo) {
+        filePath = await uploadStickPhoto(photo);
       }
-    }
 
-    // 2. Sauvegarde du stick en BDD
-    const { data, error } = await supabase
-      .from("sticks")
-      .insert({
+      const newStick = await createStick({
         latitude: draftStick.lat,
         longitude: draftStick.lng,
         description,
-        photo_path: filePath,
-        user_id: user.id,
-      })
-    .select()
-    .single();
+        photoPath: filePath,
+        userId: user.id,
+      });
 
-    if (error) {
-      console.error("Erreur sauvegarde stick :", error);
-      return;
+      setSticks((current) => [
+        ...current,
+        newStick,
+      ]);
+
+      await loadRanking();
+
+      markerRef.current?.remove();
+      markerRef.current = null;
+
+      setDraftStick(null);
+      setDescription("");
+      setPhoto(null);
+    } catch (error) {
+      console.error(
+        "Erreur sauvegarde stick :",
+        error
+      );
     }
-
-    // 3. Ajout du stick côté React
-    setSticks((currentSticks) => [
-      ...currentSticks,
-      data,
-    ]);
-    await loadRanking();
-
-    // 4. Nettoyage
-    markerRef.current?.remove();
-    markerRef.current = null;
-
-    setDraftStick(null);
-    setDescription("");
-    setPhoto(null);
-    
   }
-
-  async function loadSticks() {
-    const { data, error } = await supabase
-      .from("sticks")
-      .select("*");
-
-    if (error) {
-      console.error("Erreur chargement :", error);
-      return;
-    }
-
-    setSticks(data);
-  }
-
-  useEffect(() => {
-    loadSticks();
-  }, []);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -342,17 +308,29 @@ function App() {
     if (!map) return;
 
     const markers = sticks.map((stick) => {
-      const marker = new Marker()
+      const status =
+        stickStatuses[stick.id] ?? "unknown";
+
+      const element = document.createElement("div");
+
+      element.className =
+        `stick-marker stick-marker-${status}`;
+
+      const marker = new Marker({
+        element,
+        anchor: "bottom",
+      })
         .setLngLat([
           stick.longitude,
           stick.latitude,
         ])
         .addTo(map);
 
-      marker.getElement().addEventListener("click", (event) => {
+      element.addEventListener("click", (event) => {
         event.stopPropagation();
 
         setSelectedStick(stick);
+
         loadStickAuthor(stick.user_id);
         loadConfirmations(stick.id);
         loadReports(stick.id);
@@ -364,103 +342,45 @@ function App() {
     return () => {
       markers.forEach((marker) => marker.remove());
     };
-  }, [sticks]);
-
-  function getStickPhotoUrl(path: string) {
-    const { data } = supabase.storage
-      .from("stick-photos")
-      .getPublicUrl(path);
-
-    return data.publicUrl;
-  }
+  },[sticks, stickStatuses]);
 
   async function confirmStick() {
     if (!selectedStick || !user) return;
 
-    const now = new Date().toISOString();
+    try {
+      await confirmStickPresence(
+        selectedStick.id,
+        user.id
+      );
 
-    const { data, error } = await supabase
-      .from("stick_confirmations")
-      .upsert(
-        {
-          stick_id: selectedStick.id,
-          user_id: user.id,
-          updated_at: now,
-        },
-        {
-          onConflict: "stick_id,user_id",
-        }
-      )
-      .select()
-      .single();
-
-    if (error) {
-      console.error("Erreur confirmation :", error);
-      return;
+      await loadConfirmations(selectedStick.id);
+      await loadStickStatuses();
+    } catch (error) {
+      console.error(
+        "Erreur confirmation :",
+        error
+      );
     }
-
-    await loadConfirmations(selectedStick.id);
   }
 
   async function reportMissingStick() {
     if (!selectedStick || !user) return;
 
-    const now = new Date().toISOString();
+    try {
+      await reportStickMissing(
+        selectedStick.id,
+        user.id
+      );
 
-    const { data, error } = await supabase
-      .from("stick_reports")
-      .upsert(
-        {
-          stick_id: selectedStick.id,
-          user_id: user.id,
-          reason: "missing",
-          updated_at: now,
-        },
-        {
-          onConflict: "stick_id,user_id",
-        }
-      )
-      .select()
-      .single();
-
-    if (error) {
-      console.error("Erreur signalement :", error);
-      return;
+      await loadReports(selectedStick.id);
+      await loadStickStatuses();
+    } catch (error) {
+      console.error(
+        "Erreur signalement :",
+        error
+      );
     }
-
-    await loadReports(selectedStick.id);
   }
-
-  function getStickStatus() {
-    const latestConfirmation = confirmations[0];
-    const latestReport = reports[0];
-
-    if (!latestConfirmation && !latestReport) {
-      return "unknown";
-    }
-
-    if (latestConfirmation && !latestReport) {
-      return "present";
-    }
-
-    if (!latestConfirmation && latestReport) {
-      return "missing";
-    }
-
-    const confirmationDate = new Date(
-      latestConfirmation.updated_at
-    ).getTime();
-
-    const reportDate = new Date(
-      latestReport.updated_at
-    ).getTime();
-
-    return confirmationDate > reportDate
-      ? "present"
-      : "missing";
-  }
-
-  const stickStatus = getStickStatus();
 
   return (
     <>
@@ -470,17 +390,10 @@ function App() {
         </div>
       )}
       {user && (
-        <div className="user-panel">
-          <span>
-            👤 {profile?.username ?? "Chargement..."}
-          </span>
-
-          <button
-            onClick={() => supabase.auth.signOut()}
-          >
-            Déconnexion
-          </button>
-        </div>
+        <UserPanel
+          profile={profile}
+          onLogout={() => supabase.auth.signOut()}
+        />
       )}
       <button
         className="add-stick-button"
@@ -490,150 +403,38 @@ function App() {
         + Ajouter un stick
       </button>
 
-      <div className="ranking-panel">
-        <h2>🏆 Contributeurs</h2>
-
-        {ranking.map((entry, index) => (
-          <div
-            key={entry.user_id}
-            className="ranking-entry"
-          >
-            <span>
-              {index + 1}. {entry.username}
-            </span>
-
-            <strong>
-              {entry.stick_count} sticks
-            </strong>
-          </div>
-        ))}
-      </div>
+      <Ranking ranking={ranking} />
 
       {draftStick && (
-        <div className="stick-form">
-          <h2>Ajouter un stick</h2>
-
-          <p>
-            📍 {draftStick.lat.toFixed(6)}, {draftStick.lng.toFixed(6)}
-          </p>
-
-          <label>
-            Photo
-            <input
-              type="file"
-              accept="image/*"
-              onChange={(event) => {
-                const file = event.target.files?.[0];
-
-                if (file) {
-                  setPhoto(file);
-                }
-              }}
-            />
-          </label>
-
-          <label>
-            Description
-            <textarea
-              value={description}
-              onChange={(event) => setDescription(event.target.value)}
-              placeholder="Décris le stick..."
-            />
-          </label>
-
-          <div className="form-buttons">
-            <button onClick={cancelStick}>
-              Annuler
-            </button>
-
-            <button onClick={saveStick}>
-              Ajouter
-            </button>
-          </div>
-        </div>
+        <StickForm
+          draftStick={draftStick}
+          description={description}
+          onDescriptionChange={setDescription}
+          onPhotoChange={setPhoto}
+          onSave={saveStick}
+          onCancel={cancelStick}
+        />
       )}
+
       {selectedStick && (
-        <aside className="stick-details">
-          <button
-            className="close-stick-details"
-            onClick={() => {
-              setSelectedStick(null); 
-              setSelectedAuthor(null)}
-            }
-          >
-            ✕
-          </button>
-
-          <h2>Stick</h2>
-
-          <p className="stick-author">
-            Ajouté par{" "}
-            <strong>
-              {selectedAuthor?.username ?? "Inconnu"}
-            </strong>
-          </p>
-
-          {selectedStick.photo_path && (
-            <img
-              src={getStickPhotoUrl(selectedStick.photo_path)}
-              alt="Stick"
-              className="stick-photo"
-            />
-          )}
-
-          <p>
-            {selectedStick.description || "Aucune description"}
-          </p>
-
-          <p className="stick-coordinates">
-            📍 {selectedStick.latitude.toFixed(5)},{" "}
-            {selectedStick.longitude.toFixed(5)}
-          </p>
-
-          <div className="stick-actions">
-            <button onClick={confirmStick}>
-              ✅ Toujours présent
-            </button>
-
-            <button onClick={reportMissingStick}>
-              🚩 Signaler disparu
-            </button>
-            <div className="stick-status">
-              {stickStatus === "present" && (
-                <>
-                  <strong>🟢 Présent</strong>
-
-                  <span>
-                    Confirmé le{" "}
-                    {new Date(
-                      confirmations[0].updated_at
-                    ).toLocaleDateString("fr-FR")}
-                  </span>
-                </>
-              )}
-
-              {stickStatus === "missing" && (
-                <>
-                  <strong>🔴 Signalé disparu</strong>
-
-                  <span>
-                    Signalé le{" "}
-                    {new Date(
-                      reports[0].updated_at
-                    ).toLocaleDateString("fr-FR")}
-                  </span>
-                </>
-              )}
-
-              {stickStatus === "unknown" && (
-                <>
-                  <strong>⚪ Non vérifié</strong>
-                  <span>Aucune information récente</span>
-                </>
-              )}
-            </div>
-          </div>
-        </aside>
+        <StickDetails
+          stick={selectedStick}
+          author={selectedAuthor}
+          confirmations={confirmations}
+          reports={reports}
+          currentUserId={user?.id ?? null}
+          photoUrl={
+            selectedStick.photo_path
+              ? getStickPhotoUrl(selectedStick.photo_path)
+              : null
+          }
+          onClose={() => {
+            setSelectedStick(null);
+            setSelectedAuthor(null);
+          }}
+          onConfirm={confirmStick}
+          onReportMissing={reportMissingStick}
+        />
       )}
       <div ref={mapContainer} className="map" />
     </>

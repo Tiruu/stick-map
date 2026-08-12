@@ -1,0 +1,224 @@
+import { supabase } from "../supabase";
+
+import type {
+  Stick,
+  StickConfirmation,
+  StickReport,
+  StickStatus,
+} from "../types";
+
+
+export async function getSticks(): Promise<Stick[]> {
+  const { data, error } = await supabase
+    .from("sticks")
+    .select("*");
+
+  if (error) {
+    throw error;
+  }
+
+  return data;
+}
+
+
+export async function createStick({
+  latitude,
+  longitude,
+  description,
+  photoPath,
+  userId,
+}: {
+  latitude: number;
+  longitude: number;
+  description: string;
+  photoPath: string | null;
+  userId: string;
+}): Promise<Stick> {
+  const { data, error } = await supabase
+    .from("sticks")
+    .insert({
+      latitude,
+      longitude,
+      description,
+      photo_path: photoPath,
+      user_id: userId,
+    })
+    .select()
+    .single();
+
+  if (error) {
+    throw error;
+  }
+
+  return data;
+}
+
+
+export async function getConfirmations(
+  stickId: string
+): Promise<StickConfirmation[]> {
+  const { data, error } = await supabase
+    .from("stick_confirmations")
+    .select("*")
+    .eq("stick_id", stickId)
+    .order("updated_at", { ascending: false });
+
+  if (error) {
+    throw error;
+  }
+
+  return data;
+}
+
+
+export async function confirmStickPresence(
+  stickId: string,
+  userId: string
+): Promise<void> {
+  const { error } = await supabase
+    .from("stick_confirmations")
+    .upsert(
+      {
+        stick_id: stickId,
+        user_id: userId,
+        updated_at: new Date().toISOString(),
+      },
+      {
+        onConflict: "stick_id,user_id",
+      }
+    );
+
+  if (error) {
+    throw error;
+  }
+}
+
+
+export async function getReports(
+  stickId: string
+): Promise<StickReport[]> {
+  const { data, error } = await supabase
+    .from("stick_reports")
+    .select("*")
+    .eq("stick_id", stickId)
+    .order("updated_at", { ascending: false });
+
+  if (error) {
+    throw error;
+  }
+
+  return data;
+}
+
+
+export async function reportStickMissing(
+  stickId: string,
+  userId: string
+): Promise<void> {
+  const { error } = await supabase
+    .from("stick_reports")
+    .upsert(
+      {
+        stick_id: stickId,
+        user_id: userId,
+        reason: "missing",
+        updated_at: new Date().toISOString(),
+      },
+      {
+        onConflict: "stick_id,user_id",
+      }
+    );
+
+  if (error) {
+    throw error;
+  }
+}
+
+export async function getStickStatuses(): Promise<
+  Record<string, StickStatus>
+> {
+  const [
+    confirmationsResult,
+    reportsResult,
+  ] = await Promise.all([
+    supabase
+      .from("stick_confirmations")
+      .select("*")
+      .order("updated_at", { ascending: false }),
+
+    supabase
+      .from("stick_reports")
+      .select("*")
+      .order("updated_at", { ascending: false }),
+  ]);
+
+  if (confirmationsResult.error) {
+    throw confirmationsResult.error;
+  }
+
+  if (reportsResult.error) {
+    throw reportsResult.error;
+  }
+
+  const confirmations =
+    confirmationsResult.data as StickConfirmation[];
+
+  const reports =
+    reportsResult.data as StickReport[];
+
+  const statuses: Record<string, StickStatus> = {};
+
+  const stickIds = new Set([
+    ...confirmations.map(
+      (confirmation) => confirmation.stick_id
+    ),
+
+    ...reports.map(
+      (report) => report.stick_id
+    ),
+  ]);
+
+  for (const stickId of stickIds) {
+    const latestConfirmation =
+      confirmations.find(
+        (confirmation) =>
+          confirmation.stick_id === stickId
+      );
+
+    const latestReport =
+      reports.find(
+        (report) =>
+          report.stick_id === stickId
+      );
+
+    if (!latestConfirmation && !latestReport) {
+      statuses[stickId] = "unknown";
+      continue;
+    }
+
+    if (latestConfirmation && !latestReport) {
+      statuses[stickId] = "present";
+      continue;
+    }
+
+    if (!latestConfirmation && latestReport) {
+      statuses[stickId] = "missing";
+      continue;
+    }
+
+    const confirmationDate = new Date(
+      latestConfirmation!.updated_at
+    ).getTime();
+
+    const reportDate = new Date(
+      latestReport!.updated_at
+    ).getTime();
+
+    statuses[stickId] =
+      confirmationDate > reportDate
+        ? "present"
+        : "missing";
+  }
+
+  return statuses;
+}

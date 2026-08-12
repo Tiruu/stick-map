@@ -210,3 +210,33 @@
   font-size: 13px;
   color: #666;
 }
+
+.stick-marker {
+  width: 22px;
+  height: 22px;
+
+  border-radius: 50%;
+
+  border: 3px solid white;
+
+  box-shadow:
+    0 2px 6px rgba(0, 0, 0, 0.35);
+
+  cursor: pointer;
+}
+
+.stick-marker-present {
+  background: #22c55e;
+}
+
+.stick-marker-missing {
+  background: #ef4444;
+}
+
+.stick-marker-unknown {
+  background: #9ca3af;
+}
+
+.stick-marker:hover {
+  transform: scale(1.2);
+}
