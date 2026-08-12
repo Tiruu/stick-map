@@ -8,7 +8,7 @@ export default function Ranking({
   ranking,
 }: RankingProps) {
   return (
-    <div className="ranking-panel">
+    <div className="ranking-content">
       <h2>🏆 Contributeurs</h2>
 
       {ranking.map((entry, index) => (

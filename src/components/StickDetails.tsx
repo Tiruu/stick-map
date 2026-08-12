@@ -1,22 +1,25 @@
 import type {
-  Stick,
-  Profile,
-  StickConfirmation,
-  StickReport,
+    Stick,
+    Profile,
+    StickConfirmation,
+    StickReport,
 } from "../types";
 
 type StickDetailsProps = {
-  stick: Stick;
-  author: Profile | null;
-  confirmations: StickConfirmation[];
-  reports: StickReport[];
-  photoUrl: string | null;
+    stick: Stick;
+    author: Profile | null;
+    confirmations: StickConfirmation[];
+    reports: StickReport[];
+    photoUrl: string | null;
 
-  currentUserId: string | null;
+    currentUserId: string | null;
 
-  onClose: () => void;
-  onConfirm: () => void;
-  onReportMissing: () => void;
+    onClose: () => void;
+    onConfirm: () => void;
+    onReportMissing: () => void;
+
+    isAdmin: boolean;
+    onDelete: () => void;
 };
 
 export default function StickDetails({
@@ -29,6 +32,9 @@ export default function StickDetails({
   onClose,
   onConfirm,
   onReportMissing,
+  isAdmin,
+  onDelete,
+
 }: StickDetailsProps) {
   const isOwner =
     currentUserId !== null &&
@@ -154,6 +160,13 @@ export default function StickDetails({
             : "🚩 Signaler disparu"}
         </button>
       </div>
+      {isAdmin && (
+        <div className="admin-actions">
+            <button onClick={onDelete}>
+            🗑 Supprimer le stick
+            </button>
+        </div>
+    )}
     </aside>
   );
 }

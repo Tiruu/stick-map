@@ -15,6 +15,7 @@ export type Stick = {
 export type Profile = {
   id: string;
   username: string;
+  role: "user" | "admin";
 };
 
 export type RankingEntry = {

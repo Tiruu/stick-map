@@ -2,9 +2,9 @@ import { useEffect, useRef, useState } from "react";
 import {
   Map,
   Marker,
-  NavigationControl,
   setWorkerUrl,
   type MapMouseEvent,
+  type GeoJSONSource,
 } from "maplibre-gl";
 
 import "maplibre-gl/dist/maplibre-gl.css";
@@ -39,6 +39,7 @@ import {
   getReports,
   reportStickMissing,
   getStickStatuses,
+  deleteStick,
 } from "./services/sticks";
 
 import { getProfile } from "./services/profiles";
@@ -52,12 +53,17 @@ import {
 function App() {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
+  
+  const isAdmin = profile?.role === "admin";
+
   const [selectedAuthor, setSelectedAuthor] = useState<Profile | null>(null);
   const [ranking, setRanking] = useState<RankingEntry[]>([]);
   const [confirmations, setConfirmations] = useState<StickConfirmation[]>([]);
   const [reports, setReports] = useState<StickReport[]>([]);
   const [stickStatuses, setStickStatuses] = useState<Record<string, StickStatus>>({});
-  
+  const sticksRef = useRef<Stick[]>([]);
+
+  const addModeRef = useRef(false);
 
   const mapContainer = useRef<HTMLDivElement>(null);
   const mapRef = useRef<Map | null>(null);
@@ -71,6 +77,34 @@ function App() {
 
   const [description, setDescription] = useState("");
   const [photo, setPhoto] = useState<File | null>(null);
+
+  const [showRanking, setShowRanking] = useState(false);
+
+  function sticksToGeoJSON(
+    sticks: Stick[],
+    statuses: Record<string, StickStatus>
+  ) {
+    return {
+      type: "FeatureCollection" as const,
+
+      features: sticks.map((stick) => ({
+        type: "Feature" as const,
+
+        geometry: {
+          type: "Point" as const,
+          coordinates: [
+            stick.longitude,
+            stick.latitude,
+          ],
+        },
+
+        properties: {
+          id: stick.id,
+          status: statuses[stick.id] ?? "unknown",
+        },
+      })),
+    };
+  }
   
   async function loadProfile(userId: string) {
     try {
@@ -193,6 +227,14 @@ function App() {
   }, []);
 
   useEffect(() => {
+    sticksRef.current = sticks;
+  }, [sticks]);
+
+  useEffect(() => {
+    addModeRef.current = addMode;
+  }, [addMode]);
+
+  useEffect(() => {
     if (!mapContainer.current) return;
 
     const map = new Map({
@@ -205,7 +247,167 @@ function App() {
     });
 
     mapRef.current = map;
-    map.addControl(new NavigationControl(), "top-right");
+    map.on("load", () => {
+    map.addSource("sticks", {
+      type: "geojson",
+      data: sticksToGeoJSON([], {}),
+
+      cluster: true,
+      clusterMaxZoom: 14,
+      clusterRadius: 50,
+    });
+
+    map.addLayer({
+      id: "stick-clusters",
+      type: "circle",
+      source: "sticks",
+
+      filter: ["has", "point_count"],
+
+      paint: {
+        "circle-color": "#2563eb",
+
+        "circle-radius": [
+          "step",
+          ["get", "point_count"],
+
+          18,
+
+          10,
+          23,
+
+          50,
+          30,
+        ],
+
+        "circle-stroke-width": 2,
+        "circle-stroke-color": "#ffffff",
+      },
+    });
+
+    map.addLayer({
+      id: "stick-cluster-count",
+      type: "symbol",
+      source: "sticks",
+
+      filter: ["has", "point_count"],
+
+      layout: {
+        "text-field": "{point_count_abbreviated}",
+        "text-size": 13,
+      },
+
+      paint: {
+        "text-color": "#ffffff",
+      },
+    });
+
+    map.addLayer({
+      id: "stick-points",
+      type: "circle",
+      source: "sticks",
+
+      filter: ["!", ["has", "point_count"]],
+
+      paint: {
+        "circle-color": [
+          "match",
+          ["get", "status"],
+
+          "present",
+          "#22c55e",
+
+          "missing",
+          "#ef4444",
+
+          "#9ca3af",
+        ],
+        "circle-radius": 9,
+
+        "circle-stroke-width": 2,
+        "circle-stroke-color": "#ffffff",
+      },
+    });
+    map.on("click", "stick-points", (event) => {
+      if (addModeRef.current) return;
+
+      const feature = event.features?.[0];
+
+      if (!feature) return;
+
+      const stickId = feature.properties?.id;
+
+      if (!stickId) return;
+
+      const stick = sticksRef.current.find(
+        (item) => item.id === stickId
+      );
+
+      if (!stick) return;
+
+      setSelectedStick(stick);
+
+      loadStickAuthor(stick.user_id);
+      loadConfirmations(stick.id);
+      loadReports(stick.id);
+    });
+    map.on("click", "stick-clusters", async (event) => {
+      if (addModeRef.current) return;
+
+      const features = map.queryRenderedFeatures(
+        event.point,
+        {
+          layers: ["stick-clusters"],
+        }
+      );
+
+      const feature = features[0];
+
+      if (!feature) return;
+
+      const clusterId =
+        feature.properties?.cluster_id;
+
+      if (clusterId === undefined) return;
+
+      const source = map.getSource(
+        "sticks"
+      ) as GeoJSONSource;
+
+      const zoom =
+        await source.getClusterExpansionZoom(
+          clusterId
+        );
+
+      if (feature.geometry.type !== "Point") {
+        return;
+      }
+
+      map.easeTo({
+        center: feature.geometry.coordinates as [
+          number,
+          number
+        ],
+
+        zoom,
+      });
+    });
+    map.on("mouseenter", "stick-clusters", () => {
+      map.getCanvas().style.cursor = "pointer";
+    });
+
+    map.on("mouseleave", "stick-clusters", () => {
+      map.getCanvas().style.cursor = "";
+    });
+
+    map.on("mouseenter", "stick-points", () => {
+      map.getCanvas().style.cursor = "pointer";
+    });
+
+    map.on("mouseleave", "stick-points", () => {
+      map.getCanvas().style.cursor = "";
+    });
+  });
     map.touchZoomRotate.disableRotation();
 
     return () => {
@@ -307,42 +509,24 @@ function App() {
 
     if (!map) return;
 
-    const markers = sticks.map((stick) => {
-      const status =
-        stickStatuses[stick.id] ?? "unknown";
+    const updateSource = () => {
+      const source = map.getSource(
+        "sticks"
+      ) as GeoJSONSource | undefined;
 
-      const element = document.createElement("div");
+      if (!source) return;
 
-      element.className =
-        `stick-marker stick-marker-${status}`;
-
-      const marker = new Marker({
-        element,
-        anchor: "bottom",
-      })
-        .setLngLat([
-          stick.longitude,
-          stick.latitude,
-        ])
-        .addTo(map);
-
-      element.addEventListener("click", (event) => {
-        event.stopPropagation();
-
-        setSelectedStick(stick);
-
-        loadStickAuthor(stick.user_id);
-        loadConfirmations(stick.id);
-        loadReports(stick.id);
-      });
-
-      return marker;
-    });
-
-    return () => {
-      markers.forEach((marker) => marker.remove());
+      source.setData(
+        sticksToGeoJSON(sticks, stickStatuses)
+      );
     };
-  },[sticks, stickStatuses]);
+
+    if (map.isStyleLoaded()) {
+      updateSource();
+    } else {
+      map.once("load", updateSource);
+    }
+  }, [sticks, stickStatuses]);
 
   async function confirmStick() {
     if (!selectedStick || !user) return;
@@ -382,6 +566,36 @@ function App() {
     }
   }
 
+  async function deleteSelectedStick() {
+    if (!selectedStick || !isAdmin) return;
+
+    try {
+      await deleteStick(
+        selectedStick.id,
+        selectedStick.photo_path
+      );
+
+      setSticks((current) =>
+        current.filter(
+          (stick) => stick.id !== selectedStick.id
+        )
+      );
+
+      setSelectedStick(null);
+      setSelectedAuthor(null);
+      setConfirmations([]);
+      setReports([]);
+
+      await loadRanking();
+      await loadStickStatuses();
+    } catch (error) {
+      console.error(
+        "Erreur suppression stick :",
+        error
+      );
+    }
+  }
+
   return (
     <>
       {!user && (
@@ -403,7 +617,27 @@ function App() {
         + Ajouter un stick
       </button>
 
-      <Ranking ranking={ranking} />
+      <button
+        className="ranking-button"
+        onClick={() => setShowRanking(true)}
+      >
+        🏆 Classement
+      </button>
+
+      {showRanking && (
+        <div className="ranking-overlay">
+          <div className="ranking-modal">
+            <button
+              className="close-ranking"
+              onClick={() => setShowRanking(false)}
+            >
+              ✕
+            </button>
+
+            <Ranking ranking={ranking} />
+          </div>
+        </div>
+      )}
 
       {draftStick && (
         <StickForm
@@ -434,7 +668,14 @@ function App() {
           }}
           onConfirm={confirmStick}
           onReportMissing={reportMissingStick}
+          isAdmin={isAdmin}
+          onDelete={deleteSelectedStick}
         />
+      )}
+      {isAdmin && (
+        <div className="admin-panel">
+          <strong>Mode développeur</strong>
+        </div>
       )}
       <div ref={mapContainer} className="map" />
     </>

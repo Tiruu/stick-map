@@ -222,3 +222,27 @@ export async function getStickStatuses(): Promise<
 
   return statuses;
 }
+
+export async function deleteStick(
+  stickId: string,
+  photoPath: string | null
+): Promise<void> {
+  if (photoPath) {
+    const { error: storageError } = await supabase.storage
+      .from("stick-photos")
+      .remove([photoPath]);
+
+    if (storageError) {
+      throw storageError;
+    }
+  }
+
+  const { error } = await supabase
+    .from("sticks")
+    .delete()
+    .eq("id", stickId);
+
+  if (error) {
+    throw error;
+  }
+}
