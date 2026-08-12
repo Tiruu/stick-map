@@ -63,3 +63,108 @@
   padding: 10px;
   cursor: pointer;
 }
+
+.stick-details {
+  position: absolute;
+  z-index: 30;
+
+  top: 20px;
+  right: 20px;
+
+  width: 320px;
+  padding: 20px;
+
+  background: white;
+  border-radius: 12px;
+
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+}
+
+.close-stick-details {
+  position: absolute;
+
+  top: 10px;
+  right: 10px;
+
+  border: none;
+  background: transparent;
+
+  font-size: 20px;
+  cursor: pointer;
+}
+
+.stick-details h2 {
+  margin-top: 0;
+}
+
+.stick-coordinates {
+  color: #666;
+  font-size: 14px;
+}
+
+.stick-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+
+  margin-top: 20px;
+}
+
+.stick-actions button {
+  padding: 10px;
+  cursor: pointer;
+}
+
+.stick-photo {
+  width: 100%;
+  max-height: 250px;
+  object-fit: cover;
+
+  border-radius: 8px;
+
+  margin-bottom: 15px;
+}
+
+.auth-overlay {
+  position: fixed;
+  inset: 0;
+
+  z-index: 100;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  background: rgba(0, 0, 0, 0.45);
+}
+
+.auth-panel {
+  width: 320px;
+  padding: 24px;
+
+  background: white;
+  border-radius: 12px;
+
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.25);
+}
+
+.user-panel {
+  position: absolute;
+  z-index: 20;
+
+  top: 20px;
+  right: 70px;
+
+  padding: 10px 14px;
+
+  background: white;
+  border-radius: 8px;
+
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
