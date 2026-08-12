@@ -168,3 +168,28 @@
   align-items: center;
   gap: 12px;
 }
+
+.ranking-panel {
+  position: absolute;
+  z-index: 20;
+  left: 20px;
+  bottom: 20px;
+
+  width: 280px;
+  padding: 16px;
+
+  background: white;
+  border-radius: 12px;
+}
+
+.ranking-panel h2 {
+  margin-top: 0;
+}
+
+.ranking-entry {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+
+  padding: 8px 0;
+}

@@ -35,10 +35,17 @@ type Profile = {
   username: string;
 };
 
+type RankingEntry = {
+  user_id: string;
+  username: string;
+  stick_count: number;
+};
+
 function App() {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [selectedAuthor, setSelectedAuthor] = useState<Profile | null>(null);
+  const [ranking, setRanking] = useState<RankingEntry[]>([]);
 
   const mapContainer = useRef<HTMLDivElement>(null);
   const mapRef = useRef<Map | null>(null);
@@ -68,6 +75,41 @@ function App() {
     setProfile(data);
   }
 
+  async function loadStickAuthor(userId: string | null) {
+    if (!userId) {
+      setSelectedAuthor(null);
+      return;
+    }
+
+    const { data, error } = await supabase
+      .from("profiles")
+      .select("id, username")
+      .eq("id", userId)
+      .single();
+
+    if (error) {
+      console.error("Erreur chargement auteur :", error);
+      setSelectedAuthor(null);
+      return;
+    }
+
+    setSelectedAuthor(data);
+  }
+
+  async function loadRanking() {
+    const { data, error } = await supabase
+      .from("contributor_ranking")
+      .select("*")
+      .order("stick_count", { ascending: false });
+
+    if (error) {
+      console.error("Erreur classement :", error);
+      return;
+    }
+
+    setRanking(data);
+  }
+
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
       const currentUser = data.user;
@@ -77,6 +119,7 @@ function App() {
       if (currentUser) {
         loadProfile(currentUser.id);
       }
+      loadRanking();
     });
 
     const {
@@ -215,6 +258,7 @@ function App() {
       ...currentSticks,
       data,
     ]);
+    await loadRanking();
 
     // 4. Nettoyage
     markerRef.current?.remove();
@@ -223,6 +267,7 @@ function App() {
     setDraftStick(null);
     setDescription("");
     setPhoto(null);
+    
   }
 
   async function loadSticks() {
@@ -257,7 +302,9 @@ function App() {
 
       marker.getElement().addEventListener("click", (event) => {
         event.stopPropagation();
+
         setSelectedStick(stick);
+        loadStickAuthor(stick.user_id);
       });
 
       return marker;
@@ -303,6 +350,25 @@ function App() {
       >
         + Ajouter un stick
       </button>
+
+      <div className="ranking-panel">
+        <h2>🏆 Contributeurs</h2>
+
+        {ranking.map((entry, index) => (
+          <div
+            key={entry.user_id}
+            className="ranking-entry"
+          >
+            <span>
+              {index + 1}. {entry.username}
+            </span>
+
+            <strong>
+              {entry.stick_count} sticks
+            </strong>
+          </div>
+        ))}
+      </div>
 
       {draftStick && (
         <div className="stick-form">
@@ -351,12 +417,22 @@ function App() {
         <aside className="stick-details">
           <button
             className="close-stick-details"
-            onClick={() => setSelectedStick(null)}
+            onClick={() => {
+              setSelectedStick(null); 
+              setSelectedAuthor(null)}
+            }
           >
             ✕
           </button>
 
           <h2>Stick</h2>
+
+          <p className="stick-author">
+            Ajouté par{" "}
+            <strong>
+              {selectedAuthor?.username ?? "Inconnu"}
+            </strong>
+          </p>
 
           {selectedStick.photo_path && (
             <img
