@@ -41,11 +41,30 @@ type RankingEntry = {
   stick_count: number;
 };
 
+type StickConfirmation = {
+  id: string;
+  stick_id: string;
+  user_id: string;
+  created_at: string;
+  updated_at: string;
+};
+
+type StickReport = {
+  id: string;
+  stick_id: string;
+  user_id: string;
+  reason: string;
+  created_at: string;
+  updated_at: string;
+};
+
 function App() {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [selectedAuthor, setSelectedAuthor] = useState<Profile | null>(null);
   const [ranking, setRanking] = useState<RankingEntry[]>([]);
+  const [confirmations, setConfirmations] = useState<StickConfirmation[]>([]);
+  const [reports, setReports] = useState<StickReport[]>([]);
 
   const mapContainer = useRef<HTMLDivElement>(null);
   const mapRef = useRef<Map | null>(null);
@@ -108,6 +127,36 @@ function App() {
     }
 
     setRanking(data);
+  }
+
+  async function loadConfirmations(stickId: string) {
+    const { data, error } = await supabase
+      .from("stick_confirmations")
+      .select("*")
+      .eq("stick_id", stickId)
+      .order("updated_at", { ascending: false });
+
+    if (error) {
+      console.error("Erreur chargement confirmations :", error);
+      return;
+    }
+
+    setConfirmations(data);
+  }
+
+  async function loadReports(stickId: string) {
+    const { data, error } = await supabase
+      .from("stick_reports")
+      .select("*")
+      .eq("stick_id", stickId)
+      .order("updated_at", { ascending: false });
+
+    if (error) {
+      console.error("Erreur chargement signalements :", error);
+      return;
+    }
+
+    setReports(data);
   }
 
   useEffect(() => {
@@ -305,6 +354,8 @@ function App() {
 
         setSelectedStick(stick);
         loadStickAuthor(stick.user_id);
+        loadConfirmations(stick.id);
+        loadReports(stick.id);
       });
 
       return marker;
@@ -322,6 +373,94 @@ function App() {
 
     return data.publicUrl;
   }
+
+  async function confirmStick() {
+    if (!selectedStick || !user) return;
+
+    const now = new Date().toISOString();
+
+    const { data, error } = await supabase
+      .from("stick_confirmations")
+      .upsert(
+        {
+          stick_id: selectedStick.id,
+          user_id: user.id,
+          updated_at: now,
+        },
+        {
+          onConflict: "stick_id,user_id",
+        }
+      )
+      .select()
+      .single();
+
+    if (error) {
+      console.error("Erreur confirmation :", error);
+      return;
+    }
+
+    await loadConfirmations(selectedStick.id);
+  }
+
+  async function reportMissingStick() {
+    if (!selectedStick || !user) return;
+
+    const now = new Date().toISOString();
+
+    const { data, error } = await supabase
+      .from("stick_reports")
+      .upsert(
+        {
+          stick_id: selectedStick.id,
+          user_id: user.id,
+          reason: "missing",
+          updated_at: now,
+        },
+        {
+          onConflict: "stick_id,user_id",
+        }
+      )
+      .select()
+      .single();
+
+    if (error) {
+      console.error("Erreur signalement :", error);
+      return;
+    }
+
+    await loadReports(selectedStick.id);
+  }
+
+  function getStickStatus() {
+    const latestConfirmation = confirmations[0];
+    const latestReport = reports[0];
+
+    if (!latestConfirmation && !latestReport) {
+      return "unknown";
+    }
+
+    if (latestConfirmation && !latestReport) {
+      return "present";
+    }
+
+    if (!latestConfirmation && latestReport) {
+      return "missing";
+    }
+
+    const confirmationDate = new Date(
+      latestConfirmation.updated_at
+    ).getTime();
+
+    const reportDate = new Date(
+      latestReport.updated_at
+    ).getTime();
+
+    return confirmationDate > reportDate
+      ? "present"
+      : "missing";
+  }
+
+  const stickStatus = getStickStatus();
 
   return (
     <>
@@ -452,13 +591,47 @@ function App() {
           </p>
 
           <div className="stick-actions">
-            <button>
+            <button onClick={confirmStick}>
               ✅ Toujours présent
             </button>
 
-            <button>
+            <button onClick={reportMissingStick}>
               🚩 Signaler disparu
             </button>
+            <div className="stick-status">
+              {stickStatus === "present" && (
+                <>
+                  <strong>🟢 Présent</strong>
+
+                  <span>
+                    Confirmé le{" "}
+                    {new Date(
+                      confirmations[0].updated_at
+                    ).toLocaleDateString("fr-FR")}
+                  </span>
+                </>
+              )}
+
+              {stickStatus === "missing" && (
+                <>
+                  <strong>🔴 Signalé disparu</strong>
+
+                  <span>
+                    Signalé le{" "}
+                    {new Date(
+                      reports[0].updated_at
+                    ).toLocaleDateString("fr-FR")}
+                  </span>
+                </>
+              )}
+
+              {stickStatus === "unknown" && (
+                <>
+                  <strong>⚪ Non vérifié</strong>
+                  <span>Aucune information récente</span>
+                </>
+              )}
+            </div>
           </div>
         </aside>
       )}

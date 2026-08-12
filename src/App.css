@@ -193,3 +193,20 @@
 
   padding: 8px 0;
 }
+
+.stick-status {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+
+  padding: 12px;
+  margin: 15px 0;
+
+  background: #f5f5f5;
+  border-radius: 8px;
+}
+
+.stick-status span {
+  font-size: 13px;
+  color: #666;
+}
