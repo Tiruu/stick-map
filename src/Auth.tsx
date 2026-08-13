@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { supabase } from "./supabase";
+import { Turnstile } from "@marsidev/react-turnstile";
 
 export default function Auth() {
   const [email, setEmail] = useState("");
@@ -9,6 +10,8 @@ export default function Auth() {
   const [isLogin, setIsLogin] = useState(true);
   const [message, setMessage] = useState("");
 
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+
   async function handleSubmit() {
     setMessage("");
 
@@ -16,6 +19,9 @@ export default function Auth() {
       const { error } = await supabase.auth.signInWithPassword({
         email,
         password,
+        options: {
+          captchaToken: captchaToken ?? undefined,
+        },
       });
 
       if (error) {
@@ -32,6 +38,7 @@ export default function Auth() {
           data: {
             username,
           },
+          captchaToken: captchaToken ?? undefined,
         },
       });
 
@@ -75,8 +82,23 @@ export default function Auth() {
         onChange={(event) => setPassword(event.target.value)}
       />
 
-      <button onClick={handleSubmit}>
-        {isLogin ? "Se connecter" : "Créer mon compte"}
+      <Turnstile
+        siteKey={import.meta.env.VITE_TURNSTILE_SITE_KEY}
+        onSuccess={(token) => {
+          setCaptchaToken(token);
+        }}
+        onExpire={() => {
+          setCaptchaToken(null);
+        }}
+      />
+
+      <button
+        onClick={handleSubmit}
+        disabled={!captchaToken}
+      >
+        {isLogin
+          ? "Se connecter"
+          : "Créer mon compte"}
       </button>
 
       <button
