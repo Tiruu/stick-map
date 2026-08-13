@@ -10,6 +10,13 @@ export type Stick = {
   description: string;
   photo_path: string | null;
   user_id: string | null;
+  created_at: string;
+
+  moderation_status:
+    | "pending"
+    | "approved"
+    | "review"
+    | "rejected";
 };
 
 export type Profile = {

@@ -105,9 +105,28 @@ export default function StickDetails({
         📍 {stick.latitude.toFixed(5)},{" "}
         {stick.longitude.toFixed(5)}
       </p>
+      {stick.moderation_status === "pending" && (
+        <div className="moderation-status moderation-pending">
+          <strong>🟠 En attente de validation</strong>
 
-      <div className="stick-status">
-        {status === "present" && (
+          <span>
+            Ce stick n'est pas encore visible publiquement.
+          </span>
+        </div>
+      )}
+
+      {stick.moderation_status === "review" && (
+        <div className="moderation-status moderation-review">
+          <strong>🟣 En cours de vérification</strong>
+
+          <span>
+            Ce stick doit être examiné par un modérateur.
+          </span>
+        </div>
+      )}
+      {stick.moderation_status === "approved" && (
+        <div className="stick-status">
+          {status === "present" && (
           <>
             <strong>🟢 Présent</strong>
 
@@ -139,8 +158,8 @@ export default function StickDetails({
             <span>Aucune information récente</span>
           </>
         )}
-      </div>
-
+        </div>
+      )}
       <div className="stick-actions">
         <button
           onClick={onConfirm}

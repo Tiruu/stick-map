@@ -1,8 +1,10 @@
+import { useEffect, useState } from "react";
 import type { DraftStick } from "../types";
 
 type StickFormProps = {
   draftStick: DraftStick;
   description: string;
+  photo: File | null;
 
   onDescriptionChange: (value: string) => void;
   onPhotoChange: (file: File | null) => void;
@@ -14,34 +16,84 @@ type StickFormProps = {
 export default function StickForm({
   draftStick,
   description,
+  photo,
   onDescriptionChange,
   onPhotoChange,
   onSave,
   onCancel,
 }: StickFormProps) {
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!photo) {
+      setPreviewUrl(null);
+      return;
+    }
+
+    const url = URL.createObjectURL(photo);
+
+    setPreviewUrl(url);
+
+    return () => {
+      URL.revokeObjectURL(url);
+    };
+  }, [photo]);
+
   return (
     <div className="stick-form">
       <h2>Ajouter un stick</h2>
 
-      <p>
+      <p className="stick-coordinates">
         📍 {draftStick.lat.toFixed(6)},{" "}
         {draftStick.lng.toFixed(6)}
       </p>
 
-      <label>
-        Photo
+      {!photo && (
+        <label className="photo-capture">
+          📷 Prendre une photo
 
-        <input
-          type="file"
-          accept="image/*"
-          onChange={(event) => {
-            const file =
-              event.target.files?.[0] ?? null;
+          <input
+            type="file"
+            accept="image/*"
+            capture="environment"
+            onChange={(event) => {
+              const file =
+                event.target.files?.[0] ?? null;
 
-            onPhotoChange(file);
-          }}
-        />
-      </label>
+              onPhotoChange(file);
+            }}
+          />
+        </label>
+      )}
+
+      {photo && previewUrl && (
+        <div className="photo-preview">
+          <img
+            src={previewUrl}
+            alt="Aperçu du stick"
+          />
+
+          <label className="change-photo-button">
+            📷 Reprendre la photo
+
+            <input
+              type="file"
+              accept="image/*"
+              capture="environment"
+              onChange={(event) => {
+                const file =
+                  event.target.files?.[0] ?? null;
+
+                onPhotoChange(file);
+              }}
+            />
+          </label>
+        </div>
+      )}
+
+      <p className="photo-help">
+        Une photo prise sur place est obligatoire.
+      </p>
 
       <label>
         Description
@@ -60,7 +112,10 @@ export default function StickForm({
           Annuler
         </button>
 
-        <button onClick={onSave}>
+        <button
+          onClick={onSave}
+          disabled={!photo}
+        >
           Ajouter
         </button>
       </div>

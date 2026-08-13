@@ -35,7 +35,6 @@ button:disabled {
   width: 100%;
   height: 100%;
 
-  z-index: 0;
 }
 
 
@@ -47,8 +46,8 @@ button:disabled {
   position: absolute;
   z-index: 20;
 
-  top: 20px;
-  left: 20px;
+  top: 16px;
+  left: 16px;
 
   min-height: 44px;
 
@@ -501,16 +500,861 @@ button:disabled {
 
 
 /* -------------------- */
+/* SEARCH / GEOCODER    */
+/* -------------------- */
+
+.maplibregl-ctrl-top-left {
+  top: 72px;
+  left: 16px;
+}
+
+.maplibregl-ctrl-top-left .maplibregl-ctrl {
+  margin: 0;
+}
+
+.maplibregl-ctrl-geocoder {
+  width: 340px;
+  max-width: calc(100vw - 90px);
+  min-width: 0;
+
+  background: white;
+
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
+
+  overflow: visible;
+}
+
+.maplibregl-ctrl-geocoder--input {
+  width: 100%;
+  height: 46px;
+
+  padding: 0 42px;
+
+  border: none;
+  outline: none;
+
+  border-radius: 12px;
+  background: white;
+
+  font-size: 15px;
+  color: #1f2937;
+}
+
+.maplibregl-ctrl-geocoder--input::placeholder {
+  color: #9ca3af;
+}
+
+.maplibregl-ctrl-geocoder--icon-search {
+  position: absolute;
+
+  top: 50%;
+  left: 14px;
+
+  width: 18px;
+  height: 18px;
+
+  transform: translateY(-50%);
+}
+
+.maplibregl-ctrl-geocoder--button {
+  position: absolute;
+
+  top: 50%;
+  right: 8px;
+
+  width: 32px;
+  height: 32px;
+
+  transform: translateY(-50%);
+
+  border: none;
+  border-radius: 50%;
+
+  background: #f3f4f6;
+
+  cursor: pointer;
+}
+
+.maplibregl-ctrl-geocoder .suggestions {
+  margin-top: 8px;
+
+  padding: 6px;
+
+  background: white;
+
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+
+  box-shadow:
+    0 8px 24px rgba(0, 0, 0, 0.16);
+
+  overflow: hidden;
+}
+
+.maplibregl-ctrl-geocoder
+.suggestions
+> li
+> a {
+  display: block;
+
+  padding: 10px 12px;
+
+  color: #1f2937;
+  text-decoration: none;
+}
+
+.maplibregl-ctrl-geocoder
+.suggestions
+> .active
+> a,
+.maplibregl-ctrl-geocoder
+.suggestions
+> li
+> a:hover {
+  background: #f3f4f6;
+}
+
+.maplibregl-ctrl-top-left {
+  z-index: 50;
+}
+
+.maplibregl-ctrl-geocoder {
+  overflow: visible;
+}
+
+.maplibregl-ctrl-geocoder .suggestions {
+  position: absolute;
+  z-index: 100;
+
+  width: 100%;
+}
+
+/* -------------------- */
+/* PHOTO CAPTURE        */
+/* -------------------- */
+
+.photo-capture {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  min-height: 110px;
+
+  padding: 20px;
+
+  border: 2px dashed #d1d5db;
+  border-radius: 12px;
+
+  background: #f9fafb;
+
+  font-weight: 600;
+
+  cursor: pointer;
+
+  transition:
+    border-color 0.15s ease,
+    background 0.15s ease;
+}
+
+.photo-capture:hover {
+  background: #f3f4f6;
+  border-color: #9ca3af;
+}
+
+.photo-capture input {
+  display: none;
+}
+
+.photo-preview {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.photo-preview img {
+  display: block;
+
+  width: 100%;
+  max-height: 260px;
+
+  object-fit: cover;
+
+  border-radius: 12px;
+}
+
+.change-photo-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 10px 14px;
+
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+
+  background: #f9fafb;
+
+  font-weight: 500;
+
+  cursor: pointer;
+}
+
+.change-photo-button:hover {
+  background: #f3f4f6;
+}
+
+.change-photo-button input {
+  display: none;
+}
+
+.photo-help {
+  margin: -6px 0 0;
+
+  color: #6b7280;
+  font-size: 13px;
+}
+
+/* -------------------- */
+/* PROFILE              */
+/* -------------------- */
+
+.profile-overlay {
+  position: fixed;
+  inset: 0;
+
+  z-index: 90;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 20px;
+
+  background: rgba(0, 0, 0, 0.35);
+
+  backdrop-filter: blur(2px);
+}
+
+.profile-panel {
+  position: relative;
+
+  width: min(440px, 100%);
+  max-height: 80vh;
+
+  overflow-y: auto;
+
+  padding: 24px;
+
+  background: white;
+
+  border: 1px solid #e5e7eb;
+  border-radius: 16px;
+
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.22);
+}
+
+.close-profile {
+  position: absolute;
+
+  top: 12px;
+  right: 12px;
+
+  width: 36px;
+  height: 36px;
+
+  border: none;
+  border-radius: 50%;
+
+  background: #f3f4f6;
+
+  cursor: pointer;
+
+  z-index: 2;
+}
+
+.profile-panel h2 {
+  margin-top: 0;
+  padding-right: 40px;
+}
+
+.profile-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+
+  gap: 12px;
+
+  margin: 20px 0;
+}
+
+.profile-stats > div {
+  display: flex;
+  flex-direction: column;
+
+  gap: 4px;
+
+  padding: 16px;
+
+  background: #f9fafb;
+
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+}
+
+.profile-stats strong {
+  font-size: 24px;
+}
+
+.profile-stats span {
+  color: #6b7280;
+  font-size: 13px;
+}
+
+.profile-stick-list {
+  display: flex;
+  flex-direction: column;
+
+  gap: 8px;
+}
+
+.profile-stick-entry {
+  width: 100%;
+
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  gap: 12px;
+
+  padding: 12px;
+
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+
+  background: white;
+
+  cursor: pointer;
+
+  text-align: left;
+}
+
+.profile-stick-entry:hover {
+  background: #f9fafb;
+}
+
+.profile-stick-entry small {
+  color: #6b7280;
+  white-space: nowrap;
+}
+/* -------------------- */
+/* LOGIN BUTTON         */
+/* -------------------- */
+
+.login-button {
+  position: absolute;
+  z-index: 20;
+
+  top: 20px;
+  right: 70px;
+
+  min-height: 44px;
+
+  padding: 10px 16px;
+
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+
+  background: white;
+  color: #1f2937;
+
+  font-weight: 600;
+  cursor: pointer;
+
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
+
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease,
+    background 0.15s ease;
+}
+
+.login-button:hover {
+  background: #f9fafb;
+
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.16);
+
+  transform: translateY(-1px);
+}
+
+.login-button:active {
+  transform: translateY(0);
+
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.12);
+}
+
+.profile-username {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 12px;
+
+  /* Espace réservé à la croix */
+  padding-right: 48px;
+}
+
+.profile-username h2 {
+  margin: 0;
+}
+
+.profile-username button,
+.username-editor button {
+  padding: 8px 12px;
+
+  border: none;
+  border-radius: 8px;
+
+  background: #f3f4f6;
+
+  cursor: pointer;
+}
+
+.username-editor {
+  display: flex;
+  flex-direction: column;
+
+  gap: 10px;
+
+  margin-bottom: 20px;
+}
+
+.username-editor input {
+  width: 100%;
+
+  padding: 10px 12px;
+
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+}
+
+.username-editor-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.username-editor-actions button {
+  flex: 1;
+}
+
+.username-error {
+  margin: 0;
+
+  color: #b91c1c;
+  font-size: 13px;
+}
+
+/* -------------------- */
+/* VALIDATION           */
+/* -------------------- */
+
+.validation-button {
+  position: absolute;
+  z-index: 20;
+
+  top: 130px;
+  left: 16px;
+
+  min-height: 44px;
+
+  padding: 10px 16px;
+
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+
+  background: white;
+
+  font-weight: 600;
+  cursor: pointer;
+
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
+}
+
+.validation-overlay {
+  position: fixed;
+  inset: 0;
+
+  z-index: 90;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 20px;
+
+  background: rgba(0, 0, 0, 0.4);
+
+  backdrop-filter: blur(3px);
+}
+
+.validation-panel {
+  position: relative;
+
+  width: min(440px, 100%);
+  max-height: 85vh;
+
+  overflow-y: auto;
+
+  padding: 24px;
+
+  background: white;
+
+  border-radius: 16px;
+
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.25);
+}
+
+.close-validation {
+  position: absolute;
+
+  top: 10px;
+  right: 10px;
+
+  width: 36px;
+  height: 36px;
+
+  border: none;
+  border-radius: 50%;
+
+  background: #f3f4f6;
+
+  cursor: pointer;
+}
+
+.validation-panel h2 {
+  margin-top: 0;
+
+  padding-right: 40px;
+}
+
+.validation-counter {
+  color: #6b7280;
+  font-size: 13px;
+}
+
+.validation-photo {
+  width: 100%;
+  max-height: 320px;
+
+  object-fit: cover;
+
+  border-radius: 12px;
+
+  margin: 12px 0;
+}
+
+.validation-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+
+  gap: 10px;
+
+  margin-top: 20px;
+}
+
+.validation-actions button {
+  min-height: 44px;
+
+  border: none;
+  border-radius: 9px;
+
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.validation-approve {
+  background: #dcfce7;
+}
+
+.validation-reject {
+  background: #fee2e2;
+}
+
+.validation-navigation {
+  display: flex;
+  justify-content: space-between;
+
+  gap: 10px;
+
+  margin-top: 12px;
+}
+
+.validation-navigation button {
+  flex: 1;
+
+  padding: 9px;
+
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+
+  background: #f9fafb;
+
+  cursor: pointer;
+}
+
+@media (max-width: 700px) {
+  .validation-button {
+    top: 122px;
+    left: 12px;
+  }
+
+  .validation-overlay {
+    align-items: flex-end;
+
+    padding: 0;
+  }
+
+  .validation-panel {
+    width: 100%;
+    max-height: 85vh;
+
+    border-radius: 18px 18px 0 0;
+
+    padding:
+      20px
+      20px
+      calc(20px + env(safe-area-inset-bottom));
+  }
+}
+
+.moderation-status {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+
+  padding: 12px;
+  margin: 15px 0;
+
+  border-radius: 10px;
+}
+
+.moderation-status span {
+  font-size: 13px;
+}
+
+.moderation-pending {
+  background: #fffbeb;
+  color: #92400e;
+}
+
+.moderation-pending span {
+  color: #b45309;
+}
+
+.moderation-review {
+  background: #f5f3ff;
+  color: #6d28d9;
+}
+
+.moderation-review span {
+  color: #7c3aed;
+}
+
+/* -------------------- */
+/* ADMIN MODERATION     */
+/* -------------------- */
+
+.admin-moderation-button {
+  position: absolute;
+  z-index: 20;
+
+  top: 182px;
+  left: 16px;
+
+  min-height: 44px;
+
+  padding: 10px 16px;
+
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+
+  background: white;
+
+  font-weight: 600;
+  cursor: pointer;
+
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
+}
+
+.admin-moderation-overlay {
+  position: fixed;
+  inset: 0;
+
+  z-index: 95;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 20px;
+
+  background: rgba(0, 0, 0, 0.45);
+
+  backdrop-filter: blur(3px);
+}
+
+.admin-moderation-panel {
+  position: relative;
+
+  width: min(460px, 100%);
+  max-height: 85vh;
+
+  overflow-y: auto;
+
+  padding: 24px;
+
+  background: white;
+
+  border-radius: 16px;
+
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.25);
+}
+
+.close-admin-moderation {
+  position: absolute;
+
+  top: 10px;
+  right: 10px;
+
+  width: 36px;
+  height: 36px;
+
+  border: none;
+  border-radius: 50%;
+
+  background: #f3f4f6;
+
+  cursor: pointer;
+}
+
+.admin-moderation-panel h2 {
+  margin-top: 0;
+  padding-right: 40px;
+}
+
+.admin-moderation-counter {
+  color: #6b7280;
+  font-size: 13px;
+}
+
+.admin-moderation-photo {
+  width: 100%;
+  max-height: 320px;
+
+  object-fit: cover;
+
+  border-radius: 12px;
+
+  margin: 12px 0;
+}
+
+.admin-moderation-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+
+  gap: 10px;
+
+  margin-top: 20px;
+}
+
+.admin-moderation-actions button {
+  min-height: 44px;
+
+  border: none;
+  border-radius: 9px;
+
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.admin-approve {
+  background: #dcfce7;
+}
+
+.admin-reject {
+  background: #fee2e2;
+}
+
+.admin-moderation-navigation {
+  display: flex;
+  gap: 10px;
+
+  margin-top: 12px;
+}
+
+.admin-moderation-navigation button {
+  flex: 1;
+
+  padding: 9px;
+
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+
+  background: #f9fafb;
+
+  cursor: pointer;
+}
+
+@media (max-width: 700px) {
+  .admin-moderation-button {
+    top: 176px;
+    left: 12px;
+  }
+
+  .admin-moderation-overlay {
+    align-items: flex-end;
+    padding: 0;
+  }
+
+  .admin-moderation-panel {
+    width: 100%;
+    max-height: 85vh;
+
+    border-radius: 18px 18px 0 0;
+
+    padding:
+      20px
+      20px
+      calc(20px + env(safe-area-inset-bottom));
+  }
+}
+
+/* -------------------- */
 /* MOBILE               */
 /* -------------------- */
 
 @media (max-width: 700px) {
-
   .add-stick-button {
     top: 12px;
     left: 12px;
+  }
 
-    max-width: calc(100vw - 90px);
+  .maplibregl-ctrl-top-left {
+    top: 68px;
+    left: 12px;
+    right: 70px;
+  }
+
+  .maplibregl-ctrl-geocoder {
+    width: 100%;
+    max-width: none;
+  }
+
+
+  .maplibregl-ctrl-geocoder--input {
+    height: 44px;
+    font-size: 16px;
   }
 
   .user-panel {
@@ -576,4 +1420,15 @@ button:disabled {
   .form-buttons {
     flex-direction: column-reverse;
   }
+}
+
+.login-button {
+  top: 12px;
+  right: 70px;
+
+  min-height: 44px;
+
+  padding: 8px 12px;
+
+  font-size: 14px;
 }

@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import {
   Map,
   Marker,
+  GeolocateControl,
   setWorkerUrl,
   type MapMouseEvent,
   type GeoJSONSource,
@@ -9,6 +10,14 @@ import {
 
 import "maplibre-gl/dist/maplibre-gl.css";
 import workerUrl from "maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url";
+
+import MaplibreGeocoder, {
+  type MaplibreGeocoderApi,
+  type MaplibreGeocoderApiConfig,
+  type MaplibreGeocoderFeatureResults,
+} from "@maplibre/maplibre-gl-geocoder";
+
+import "@maplibre/maplibre-gl-geocoder/dist/maplibre-gl-geocoder.css";
 import "./App.css";
 import { supabase } from "./supabase";
 import type { User } from "@supabase/supabase-js";
@@ -28,6 +37,7 @@ import type {
 
 import Ranking from "./components/Ranking";
 import UserPanel from "./components/UserPanel";
+import ProfilePanel from "./components/ProfilePanel";
 import StickForm from "./components/StickForm";
 import StickDetails from "./components/StickDetails";
 
@@ -50,11 +60,43 @@ import {
   getStickPhotoUrl,
 } from "./services/storage";
 
+import {
+  getUserSticks,
+} from "./services/sticks";
+
+import ValidationPanel from "./components/ValidationPanel";
+import AdminModerationPanel from "./components/AdminModerationPanel";
+
+import {
+  getPendingSticks,
+  voteOnStick,
+} from "./services/sticks";
+import {
+  getReviewSticks,
+  approveReviewedStick,
+  rejectReviewedStick,
+} from "./services/sticks";
+
 function App() {
+  const [showAuth, setShowAuth] = useState(false);
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
+  const [showProfile, setShowProfile] = useState(false);
+  const [userSticks, setUserSticks] = useState<Stick[]>([]);
+
+  const [pendingSticks, setPendingSticks] =
+    useState<Stick[]>([]);
+
+  const [showValidation, setShowValidation] =
+    useState(false);
+
+  const [validationIndex, setValidationIndex] =
+    useState(0);
   
   const isAdmin = profile?.role === "admin";
+  const [reviewSticks, setReviewSticks] = useState<Stick[]>([]);
+  const [showAdminModeration, setShowAdminModeration] = useState(false);
+  const [adminModerationIndex, setAdminModerationIndex] = useState(0);
 
   const [selectedAuthor, setSelectedAuthor] = useState<Profile | null>(null);
   const [ranking, setRanking] = useState<RankingEntry[]>([]);
@@ -80,6 +122,67 @@ function App() {
 
   const [showRanking, setShowRanking] = useState(false);
 
+  const geocoderApi: MaplibreGeocoderApi = {
+    forwardGeocode: async (
+      config: MaplibreGeocoderApiConfig
+    ): Promise<MaplibreGeocoderFeatureResults> => {
+      const features: MaplibreGeocoderFeatureResults["features"] = [];
+
+      if (typeof config.query !== "string") {
+        return {
+          type: "FeatureCollection",
+          features,
+        };
+      }
+
+      try {
+        const response = await fetch(
+          `https://nominatim.openstreetmap.org/search?` +
+            new URLSearchParams({
+              q: config.query,
+              format: "geojson",
+              addressdetails: "1",
+              limit: "5",
+            })
+        );
+
+        const geojson = await response.json();
+
+        const seen = new Set<string>();
+
+        for (const feature of geojson.features) {
+          const displayName = feature.properties.display_name;
+
+          if (seen.has(displayName)) {
+            continue;
+          }
+
+          seen.add(displayName);
+
+          features.push({
+            type: "Feature",
+            geometry: feature.geometry,
+            place_name: displayName,
+            properties: feature.properties,
+            text: displayName,
+            place_type: ["place"],
+            center: feature.geometry.coordinates,
+          });
+        }
+      } catch (error) {
+        console.error(
+          "Erreur recherche adresse :",
+          error
+        );
+      }
+
+      return {
+        type: "FeatureCollection",
+        features,
+      };
+    },
+  };
+
   function sticksToGeoJSON(
     sticks: Stick[],
     statuses: Record<string, StickStatus>
@@ -100,7 +203,12 @@ function App() {
 
         properties: {
           id: stick.id,
-          status: statuses[stick.id] ?? "unknown",
+
+          status:
+            statuses[stick.id] ?? "unknown",
+
+          moderation_status:
+            stick.moderation_status,
         },
       })),
     };
@@ -115,13 +223,79 @@ function App() {
     }
   }
 
+  async function openProfile() {
+    console.log("Ouverture profil");
+
+    if (!user) {
+      console.log("Pas d'utilisateur connecté");
+      return;
+    }
+
+    try {
+      const data = await getUserSticks(user.id);
+
+      console.log("Sticks utilisateur :", data);
+
+      setUserSticks(data);
+      setShowProfile(true);
+    } catch (error) {
+      console.error(
+        "Erreur chargement profil :",
+        error
+      );
+    }
+  }
+
   async function loadSticks() {
     try {
-      const data = await getSticks();
+      const data = await getSticks(
+        user?.id ?? null,
+        isAdmin
+      );
 
       setSticks(data);
     } catch (error) {
-      console.error("Erreur chargement :", error);
+      console.error(
+        "Erreur chargement sticks :",
+        error
+      );
+    }
+  }
+
+  async function loadPendingSticks() {
+    if (!user) {
+      setPendingSticks([]);
+      return;
+    }
+
+    try {
+      const data = await getPendingSticks();
+
+      const { data: votes, error } = await supabase
+        .from("stick_validation_votes")
+        .select("stick_id")
+        .eq("user_id", user.id);
+
+      if (error) {
+        throw error;
+      }
+
+      const votedStickIds = new Set(
+        votes.map((vote) => vote.stick_id)
+      );
+
+      const availableSticks = data.filter(
+        (stick) =>
+          stick.user_id !== user.id &&
+          !votedStickIds.has(stick.id)
+      );
+
+      setPendingSticks(availableSticks);
+    } catch (error) {
+      console.error(
+        "Erreur sticks à valider :",
+        error
+      );
     }
   }
 
@@ -175,6 +349,24 @@ function App() {
     }
   }
 
+  async function loadReviewSticks() {
+    if (!isAdmin) {
+      setReviewSticks([]);
+      return;
+    }
+
+    try {
+      const data = await getReviewSticks();
+
+      setReviewSticks(data);
+    } catch (error) {
+      console.error(
+        "Erreur chargement modération :",
+        error
+      );
+    }
+  }
+
   async function loadStickStatuses() {
     try {
       const data = await getStickStatuses();
@@ -191,7 +383,7 @@ function App() {
   useEffect(() => {
     loadSticks();
     loadStickStatuses();
-  }, []);
+  }, [user, isAdmin]);
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
@@ -208,7 +400,7 @@ function App() {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
+      async (_event, session) => {
         const currentUser = session?.user ?? null;
 
         setUser(currentUser);
@@ -218,6 +410,7 @@ function App() {
         } else {
           setProfile(null);
         }
+        await loadSticks();
       }
     );
 
@@ -240,13 +433,14 @@ function App() {
     const map = new Map({
       container: mapContainer.current,
       style: "https://tiles.openfreemap.org/styles/liberty",
-      center: [3.57, 47.8],
-      zoom: 10,
+      center: [3.57, 47.80],
+      zoom: 12,
 
       dragRotate: false,
     });
 
     mapRef.current = map;
+
     map.on("load", () => {
     map.addSource("sticks", {
       type: "geojson",
@@ -256,6 +450,38 @@ function App() {
       clusterMaxZoom: 14,
       clusterRadius: 50,
     });
+    map.addControl(
+      new GeolocateControl({
+        positionOptions: {
+          enableHighAccuracy: true,
+        },
+        trackUserLocation: true,
+        showUserLocation: true,
+        showAccuracyCircle: true,
+      }),
+      "top-right"
+    );
+
+    const geocoder = new MaplibreGeocoder(
+      geocoderApi,
+      {
+        maplibregl: {
+          Map,
+          Marker,
+        } as any,
+
+        placeholder: "Rechercher une ville ou une adresse",
+        showResultsWhileTyping: true,
+        marker: false,
+
+        flyTo: {
+          duration: 2000,
+          zoom: 14,
+        },
+      }
+    );
+
+    map.addControl(geocoder, "top-left");
 
     map.addLayer({
       id: "stick-clusters",
@@ -311,15 +537,57 @@ function App() {
 
       paint: {
         "circle-color": [
-          "match",
-          ["get", "status"],
+          "case",
 
-          "present",
+          // Pending
+          [
+            "==",
+            ["get", "moderation_status"],
+            "pending",
+          ],
+          "#f59e0b",
+
+          // Review admin
+          [
+            "==",
+            ["get", "moderation_status"],
+            "review",
+          ],
+          "#8b5cf6",
+
+          // Approved + présent
+          [
+            "all",
+            [
+              "==",
+              ["get", "moderation_status"],
+              "approved",
+            ],
+            [
+              "==",
+              ["get", "status"],
+              "present",
+            ],
+          ],
           "#22c55e",
 
-          "missing",
+          // Approved + disparu
+          [
+            "all",
+            [
+              "==",
+              ["get", "moderation_status"],
+              "approved",
+            ],
+            [
+              "==",
+              ["get", "status"],
+              "missing",
+            ],
+          ],
           "#ef4444",
 
+          // Par défaut : approved mais non vérifié
           "#9ca3af",
         ],
         "circle-radius": 9,
@@ -350,6 +618,20 @@ function App() {
       loadStickAuthor(stick.user_id);
       loadConfirmations(stick.id);
       loadReports(stick.id);
+
+      const isMobile = window.innerWidth <= 700;
+
+      map.easeTo({
+        center: [
+          stick.longitude,
+          stick.latitude,
+        ],
+        zoom: Math.max(map.getZoom(), 18),
+        offset: isMobile
+          ? [0, -140]
+          : [-180, 0],
+        duration: 2000,
+      });
     });
     map.on("click", "stick-clusters", async (event) => {
       if (addModeRef.current) return;
@@ -390,6 +672,7 @@ function App() {
         ],
 
         zoom,
+        duration: 350,
       });
     });
     map.on("mouseenter", "stick-clusters", () => {
@@ -466,7 +749,7 @@ function App() {
   }
 
   async function saveStick() {
-    if (!draftStick || !user) return;
+     if (!draftStick || !user || !photo) return;
 
     try {
       let filePath: string | null = null;
@@ -596,9 +879,105 @@ function App() {
     }
   }
 
+  async function logout() {
+    await supabase.auth.signOut();
+
+    setShowAuth(false);
+    setShowProfile(false);
+  }
+
+  useEffect(() => {
+    if (!user) {
+      setPendingSticks([]);
+      return;
+    }
+
+    loadPendingSticks();
+  }, [user]);
+
+  useEffect(() => {
+    if (isAdmin) {
+      loadReviewSticks();
+    } else {
+      setReviewSticks([]);
+    }
+  }, [isAdmin]);
+
+  async function handleAdminApproveStick(
+    stick: Stick
+  ) {
+    try {
+      await approveReviewedStick(stick.id);
+
+      await loadReviewSticks();
+      await loadSticks();
+      await loadStickStatuses();
+
+      setAdminModerationIndex(0);
+    } catch (error) {
+      console.error(
+        "Erreur validation admin :",
+        error
+      );
+    }
+  }
+
+  async function handleAdminRejectStick(
+    stick: Stick
+  ) {
+    try {
+      await rejectReviewedStick(stick.id);
+
+      await loadReviewSticks();
+      await loadSticks();
+      await loadStickStatuses();
+
+      setAdminModerationIndex(0);
+    } catch (error) {
+      console.error(
+        "Erreur refus admin :",
+        error
+      );
+    }
+  }
+
+  async function handleValidationVote(
+    stick: Stick,
+    vote: "approve" | "reject"
+  ) {
+    if (!user) return;
+
+    try {
+      await voteOnStick(
+        stick.id,
+        user.id,
+        vote
+      );
+
+      await loadPendingSticks();
+      await loadSticks();
+      await loadStickStatuses();
+
+      setValidationIndex(0);
+    } catch (error) {
+      console.error(
+        "Erreur vote validation :",
+        error
+      );
+    }
+  }
+
   return (
     <>
-      {!user && (
+    {!user && (
+      <button
+        className="login-button"
+        onClick={() => setShowAuth(true)}
+      >
+        Se connecter
+      </button>
+    )}
+      {showAuth && !user && (
         <div className="auth-overlay">
           <Auth />
         </div>
@@ -606,7 +985,8 @@ function App() {
       {user && (
         <UserPanel
           profile={profile}
-          onLogout={() => supabase.auth.signOut()}
+          onLogout={logout}
+          onOpenProfile={openProfile}
         />
       )}
       <button
@@ -616,6 +996,126 @@ function App() {
       >
         + Ajouter un stick
       </button>
+      {showProfile && profile && (
+        <ProfilePanel
+          profile={profile}
+          sticks={userSticks}
+          ranking={ranking}
+          onClose={() => setShowProfile(false)}
+          onSelectStick={(stick) => {
+            setShowProfile(false);
+            setSelectedStick(stick);
+
+            loadStickAuthor(stick.user_id);
+            loadConfirmations(stick.id);
+            loadReports(stick.id);
+          }}
+          onUsernameUpdated={(username) => {
+            setProfile((current) =>
+              current
+                ? {
+                    ...current,
+                    username,
+                  }
+                : current
+            );
+
+            loadRanking();
+          }}
+        />
+      )}
+      {user && pendingSticks.length > 0 && (
+        <button
+          className="validation-button"
+          onClick={() => {
+            setValidationIndex(0);
+            setShowValidation(true);
+          }}
+        >
+          🔔 {pendingSticks.length} stick
+          {pendingSticks.length > 1 ? "s" : ""} à valider
+        </button>
+      )}
+      {showValidation && (
+        <ValidationPanel
+          sticks={pendingSticks}
+          currentIndex={validationIndex}
+          getPhotoUrl={getStickPhotoUrl}
+
+          onClose={() =>
+            setShowValidation(false)
+          }
+
+          onApprove={(stick) =>
+            handleValidationVote(
+              stick,
+              "approve"
+            )
+          }
+
+          onReject={(stick) =>
+            handleValidationVote(
+              stick,
+              "reject"
+            )
+          }
+
+          onPrevious={() =>
+            setValidationIndex((current) =>
+              Math.max(0, current - 1)
+            )
+          }
+
+          onNext={() =>
+            setValidationIndex((current) =>
+              Math.min(
+                pendingSticks.length - 1,
+                current + 1
+              )
+            )
+          }
+        />
+      )}
+      {isAdmin && reviewSticks.length > 0 && (
+        <button
+          className="admin-moderation-button"
+          onClick={() => {
+            setAdminModerationIndex(0);
+            setShowAdminModeration(true);
+          }}
+        >
+          🛡️ Modération ({reviewSticks.length})
+        </button>
+      )}
+      {showAdminModeration && isAdmin && (
+        <AdminModerationPanel
+          sticks={reviewSticks}
+          currentIndex={adminModerationIndex}
+          getPhotoUrl={getStickPhotoUrl}
+
+          onClose={() =>
+            setShowAdminModeration(false)
+          }
+
+          onApprove={handleAdminApproveStick}
+          onReject={handleAdminRejectStick}
+
+          onPrevious={() =>
+            setAdminModerationIndex((current) =>
+              Math.max(0, current - 1)
+            )
+          }
+
+          onNext={() =>
+            setAdminModerationIndex((current) =>
+              Math.min(
+                reviewSticks.length - 1,
+                current + 1
+              )
+            )
+          }
+        />
+      )}
 
       <button
         className="ranking-button"
@@ -643,6 +1143,7 @@ function App() {
         <StickForm
           draftStick={draftStick}
           description={description}
+          photo={photo}
           onDescriptionChange={setDescription}
           onPhotoChange={setPhoto}
           onSave={saveStick}

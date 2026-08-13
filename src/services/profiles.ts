@@ -16,3 +16,16 @@ export async function getProfile(
 
   return data;
 }
+
+export async function updateUsername(
+  username: string
+): Promise<void> {
+  const { error } = await supabase.rpc(
+    "update_my_username",
+    {
+      new_username: username,
+    }
+  );
+
+  if (error) throw error;
+}
