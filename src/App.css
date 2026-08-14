@@ -1330,6 +1330,45 @@ button:disabled {
   }
 }
 
+.ranking-entry-1 {
+  font-weight: 700;
+}
+
+.ranking-entry-2,
+.ranking-entry-3 {
+  font-weight: 600;
+}
+
+.ranking-tabs {
+  display: flex;
+  gap: 6px;
+
+  margin-bottom: 16px;
+}
+
+.ranking-tabs button {
+  flex: 1;
+
+  min-height: 38px;
+
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+
+  background: #f9fafb;
+
+  cursor: pointer;
+}
+
+.ranking-tabs button.active {
+  background: #1f2937;
+  color: white;
+  border-color: #1f2937;
+}
+
+.ranking-tabs button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
 /* -------------------- */
 /* MOBILE               */
 /* -------------------- */

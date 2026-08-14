@@ -5,7 +5,10 @@ export async function getRanking(): Promise<RankingEntry[]> {
   const { data, error } = await supabase
     .from("contributor_ranking")
     .select("*")
-    .order("stick_count", { ascending: false });
+    .gt("stick_count", 0)
+    .order("stick_count", {
+      ascending: false,
+    });
 
   if (error) {
     throw error;
