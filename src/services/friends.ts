@@ -1,8 +1,5 @@
 import { supabase } from "../supabase";
-import type {
-  Friendship,
-  Profile,
-} from "../types";
+import type { Friendship } from "../types";
 
 export async function getMyFriendships(
   userId: string
