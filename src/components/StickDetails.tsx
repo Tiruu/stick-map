@@ -5,8 +5,6 @@ import type {
     StickReport,
 } from "../types";
 
-import type { User } from "@supabase/supabase-js";
-
 type StickDetailsProps = {
     stick: Stick;
     author: Profile | null;
