@@ -1171,6 +1171,7 @@ function App() {
           onReportMissing={reportMissingStick}
           isAdmin={isAdmin}
           onDelete={deleteSelectedStick}
+          user={user}
         />
       )}
       {isAdmin && (

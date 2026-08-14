@@ -5,6 +5,8 @@ import type {
     StickReport,
 } from "../types";
 
+import type { User } from "@supabase/supabase-js";
+
 type StickDetailsProps = {
     stick: Stick;
     author: Profile | null;
@@ -13,6 +15,7 @@ type StickDetailsProps = {
     photoUrl: string | null;
 
     currentUserId: string | null;
+    user: User | null;
 
     onClose: () => void;
     onConfirm: () => void;
@@ -29,6 +32,7 @@ export default function StickDetails({
   reports,
   photoUrl,
   currentUserId,
+  user,
   onClose,
   onConfirm,
   onReportMissing,
@@ -160,6 +164,7 @@ export default function StickDetails({
         )}
         </div>
       )}
+      {user && (
       <div className="stick-actions">
         <button
           onClick={onConfirm}
@@ -179,6 +184,7 @@ export default function StickDetails({
             : "🚩 Il a disparu"}
         </button>
       </div>
+      )}
       {isAdmin && (
         <div className="admin-actions">
             <button onClick={onDelete}>
