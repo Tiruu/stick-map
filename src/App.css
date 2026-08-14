@@ -144,6 +144,12 @@ button:disabled {
 
   box-shadow:
     0 6px 16px rgba(0, 59, 115, 0.22);
+
+  position: absolute;
+  z-index: 20;
+
+  top: 16px;
+  left: 16px;
 }
 
 .add-stick-button:hover:not(:disabled) {
