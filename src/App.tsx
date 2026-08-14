@@ -696,7 +696,7 @@ function App() {
       filter: ["has", "point_count"],
 
       paint: {
-        "circle-color": "#2563eb",
+        "circle-color": "#0057a8",
 
         "circle-radius": [
           "step",
@@ -711,8 +711,9 @@ function App() {
           30,
         ],
 
-        "circle-stroke-width": 2,
+        "circle-stroke-width": 3,
         "circle-stroke-color": "#ffffff",
+        "circle-opacity": 0.95,
       },
     });
 
@@ -741,63 +742,57 @@ function App() {
       filter: ["!", ["has", "point_count"]],
 
       paint: {
-        "circle-color": [
-          "case",
+          "circle-color": [
+            "case",
 
-          // Pending
-          [
-            "==",
-            ["get", "moderation_status"],
-            "pending",
-          ],
-          "#f59e0b",
-
-          // Review admin
-          [
-            "==",
-            ["get", "moderation_status"],
-            "review",
-          ],
-          "#8b5cf6",
-
-          // Approved + présent
-          [
-            "all",
             [
               "==",
               ["get", "moderation_status"],
-              "approved",
+              "pending",
             ],
-            [
-              "==",
-              ["get", "status"],
-              "present",
-            ],
-          ],
-          "#22c55e",
+            "#f59e0b",
 
-          // Approved + disparu
-          [
-            "all",
             [
               "==",
               ["get", "moderation_status"],
-              "approved",
+              "review",
             ],
+            "#7c3aed",
+
             [
-              "==",
-              ["get", "status"],
-              "missing",
+              "all",
+              [
+                "==",
+                ["get", "moderation_status"],
+                "approved",
+              ],
+              [
+                "==",
+                ["get", "status"],
+                "present",
+              ],
             ],
+            "#16a34a",
+
+            [
+              "all",
+              [
+                "==",
+                ["get", "moderation_status"],
+                "approved",
+              ],
+              [
+                "==",
+                ["get", "status"],
+                "missing",
+              ],
+            ],
+            "#dc2626",
+
+            "#94a3b8",
           ],
-          "#ef4444",
-
-          // Par défaut : approved mais non vérifié
-          "#9ca3af",
-        ],
-        "circle-radius": 9,
-
-        "circle-stroke-width": 2,
+        "circle-radius": 10,
+        "circle-stroke-width": 3,
         "circle-stroke-color": "#ffffff",
       },
     });

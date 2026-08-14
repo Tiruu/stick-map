@@ -130,11 +130,30 @@ button:disabled {
 /* -------------------- */
 
 .add-stick-button {
-  position: absolute;
-  z-index: 20;
+  padding: 11px 17px;
 
-  top: 16px;
-  left: 16px;
+  background:
+    linear-gradient(
+      135deg,
+      var(--aja-blue),
+      var(--aja-blue-dark)
+    );
+
+  border: 1px solid rgba(255, 255, 255, 0.25);
+
+  letter-spacing: 0.1px;
+
+  box-shadow:
+    0 6px 16px rgba(0, 59, 115, 0.22);
+}
+
+.add-stick-button:hover:not(:disabled) {
+  background:
+    linear-gradient(
+      135deg,
+      var(--aja-blue-dark),
+      #002d57
+    );
 }
 
 
@@ -790,32 +809,35 @@ button:disabled {
 }
 
 .ranking-tabs {
-  display: flex;
-  gap: 6px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
 
-  margin-bottom: 16px;
+  padding: 4px;
+
+  background: var(--surface-soft);
+
+  border: 1px solid var(--border);
+  border-radius: 10px;
 }
 
 .ranking-tabs button {
-  flex: 1;
+  min-height: 36px;
 
-  min-height: 38px;
+  border: none;
+  border-radius: 7px;
 
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-soft);
 
-  background: var(--surface-soft);
-  color: var(--text);
-
+  font-weight: 700;
   cursor: pointer;
-  font-weight: 600;
 }
 
 .ranking-tabs button.active {
-  border-color: var(--aja-blue);
-
   background: var(--aja-blue);
   color: white;
+
+  box-shadow: 0 3px 8px rgba(0, 87, 168, 0.25);
 }
 
 .ranking-entry {
@@ -834,13 +856,41 @@ button:disabled {
   border-bottom: none;
 }
 
-.ranking-entry-1 {
-  font-weight: 800;
+.ranking-entry-1 .ranking-user {
+  color: var(--aja-blue);
 }
 
-.ranking-entry-2,
+.ranking-entry-1 {
+  background: linear-gradient(
+    90deg,
+    rgba(0, 87, 168, 0.10),
+    transparent
+  );
+
+  border-radius: 10px;
+
+  padding-left: 10px;
+  padding-right: 10px;
+
+  font-size: 16px;
+}
+
+.ranking-entry-2 {
+  background: rgba(0, 87, 168, 0.05);
+
+  border-radius: 10px;
+
+  padding-left: 10px;
+  padding-right: 10px;
+}
+
 .ranking-entry-3 {
-  font-weight: 700;
+  background: rgba(227, 6, 19, 0.04);
+
+  border-radius: 10px;
+
+  padding-left: 10px;
+  padding-right: 10px;
 }
 
 .ranking-user {
@@ -849,7 +899,7 @@ button:disabled {
   border: none;
   background: transparent;
 
-  color: inherit;
+  color: var(--aja-blue-dark);
 
   font: inherit;
   font-weight: inherit;
