@@ -2,8 +2,8 @@ import type { RankingEntry } from "../types";
 
 type RankingProps = {
   ranking: RankingEntry[];
-  mode: "all" | "friends";
-  onModeChange: (mode: "all" | "friends") => void;
+  mode?: "all" | "friends";
+  onModeChange?: (mode: "all" | "friends") => void;
 };
 
 export default function Ranking({
@@ -15,14 +15,14 @@ export default function Ranking({
     <div className="ranking-content">
       <button
         className={mode === "all" ? "active" : ""}
-        onClick={() => onModeChange("all")}
+        onClick={() => onModeChange?.("all")}
       >
         Tout le monde
       </button>
 
       <button
         className={mode === "friends" ? "active" : ""}
-        onClick={() => onModeChange("friends")}
+        onClick={() => onModeChange?.("friends")}
       >
         Amis
       </button>
