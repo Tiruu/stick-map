@@ -7,6 +7,7 @@ import {
   type MapMouseEvent,
   type GeoJSONSource,
 } from "maplibre-gl";
+import { Analytics } from "@vercel/analytics/react";
 
 import "maplibre-gl/dist/maplibre-gl.css";
 import workerUrl from "maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url";
@@ -1181,6 +1182,7 @@ function App() {
       )}
       <div ref={mapContainer} className="map" />
       <SpeedInsights />
+      <Analytics />
     </>
   );
 }
