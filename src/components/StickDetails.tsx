@@ -166,8 +166,8 @@ export default function StickDetails({
           disabled={isOwner}
         >
           {isOwner
-            ? "Votre stick"
-            : "✅ Toujours présent"}
+            ? " Tu ne peux valider ton stick."
+            : "✅ Je l'ai vu !"}
         </button>
 
         <button
@@ -175,8 +175,8 @@ export default function StickDetails({
           disabled={isOwner}
         >
           {isOwner
-            ? "Votre stick"
-            : "🚩 Signaler disparu"}
+            ? " Tu ne peux signaler ton stick."
+            : "🚩 Il a disparu"}
         </button>
       </div>
       {isAdmin && (
