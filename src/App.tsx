@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+
 import {
   Map,
   Marker,
@@ -7,7 +8,10 @@ import {
   type MapMouseEvent,
   type GeoJSONSource,
 } from "maplibre-gl";
+
 import { Analytics } from "@vercel/analytics/react";
+import { SpeedInsights } from "@vercel/speed-insights/react";
+import type { User } from "@supabase/supabase-js";
 
 import "maplibre-gl/dist/maplibre-gl.css";
 import workerUrl from "maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url";
@@ -19,13 +23,10 @@ import MaplibreGeocoder, {
 } from "@maplibre/maplibre-gl-geocoder";
 
 import "@maplibre/maplibre-gl-geocoder/dist/maplibre-gl-geocoder.css";
+
 import "./App.css";
 import { supabase } from "./supabase";
-import type { User } from "@supabase/supabase-js";
 import Auth from "./Auth";
-import { SpeedInsights } from "@vercel/speed-insights/react";
-
-setWorkerUrl(workerUrl);
 
 import type {
   DraftStick,
@@ -35,13 +36,17 @@ import type {
   StickConfirmation,
   StickReport,
   StickStatus,
+  Friendship,
 } from "./types";
 
 import Ranking from "./components/Ranking";
 import UserPanel from "./components/UserPanel";
 import ProfilePanel from "./components/ProfilePanel";
+import PublicProfilePanel from "./components/PublicProfilePanel";
 import StickForm from "./components/StickForm";
 import StickDetails from "./components/StickDetails";
+import ValidationPanel from "./components/ValidationPanel";
+import AdminModerationPanel from "./components/AdminModerationPanel";
 
 import {
   getSticks,
@@ -52,10 +57,21 @@ import {
   reportStickMissing,
   getStickStatuses,
   deleteStick,
+  getUserSticks,
+  getPendingSticks,
+  voteOnStick,
+  getReviewSticks,
+  approveReviewedStick,
+  rejectReviewedStick,
 } from "./services/sticks";
 
-import { getProfile } from "./services/profiles";
-import { getRanking } from "./services/ranking";
+import {
+  getProfile,
+} from "./services/profiles";
+
+import {
+  getRanking,
+} from "./services/ranking";
 
 import {
   uploadStickPhoto,
@@ -63,32 +79,9 @@ import {
 } from "./services/storage";
 
 import {
-  getUserSticks,
-} from "./services/sticks";
-
-import ValidationPanel from "./components/ValidationPanel";
-import AdminModerationPanel from "./components/AdminModerationPanel";
-
-import {
-  getPendingSticks,
-  voteOnStick,
-} from "./services/sticks";
-import {
-  getReviewSticks,
-  approveReviewedStick,
-  rejectReviewedStick,
-} from "./services/sticks";
-
-import type {
-  Friendship,
-} from "./types";
-
-import {
   getMyFriendships,
   getFriendProfiles,
-} from "./services/friends";
-
-import {
+  getFriendshipBetween,
   sendFriendRequest,
   updateFriendshipStatus,
 } from "./services/friends";
@@ -138,11 +131,9 @@ function App() {
 
   const [showRanking, setShowRanking] = useState(false);
 
-  const [friendships, setFriendships] =
-  useState<Friendship[]>([]);
-
-  const [friendProfiles, setFriendProfiles] =
-  useState<Profile[]>([]);
+  const [friendships, setFriendships] = useState<Friendship[]>([]);
+  const [publicProfile, setPublicProfile] = useState<Profile | null>(null);
+  const [publicProfileFriendship, setPublicProfileFriendship] = useState<Friendship | null>(null);
 
   const geocoderApi: MaplibreGeocoderApi = {
     forwardGeocode: async (
@@ -271,7 +262,6 @@ function App() {
   async function loadFriends() {
     if (!user) {
       setFriendships([]);
-      setFriendProfiles([]);
       return;
     }
 
@@ -280,11 +270,6 @@ function App() {
         await getMyFriendships(user.id);
 
       setFriendships(data);
-
-      const profiles =
-        await getFriendProfiles(user.id);
-
-      setFriendProfiles(profiles);
     } catch (error) {
       console.error(
         "Erreur chargement amis :",
@@ -324,6 +309,49 @@ function App() {
     } catch (error) {
       console.error(
         "Erreur refus ami :",
+        error
+      );
+    }
+  }
+
+  async function openPublicProfile(
+    profileId: string
+  ) {
+    if (!user) return;
+
+    try {
+      const profile = await getProfile(profileId);
+
+      const friendship =
+        await getFriendshipBetween(
+          user.id,
+          profileId
+        );
+
+      setPublicProfile(profile);
+      setPublicProfileFriendship(friendship);
+    } catch (error) {
+      console.error(
+        "Erreur chargement profil public :",
+        error
+      );
+    }
+  }
+
+  async function handleSendFriendRequest() {
+    if (!user || !publicProfile) return;
+
+    try {
+      const friendship =
+        await sendFriendRequest(
+          user.id,
+          publicProfile.id
+        );
+
+      setPublicProfileFriendship(friendship);
+    } catch (error) {
+      console.error(
+        "Erreur demande d'ami :",
         error
       );
     }
@@ -493,7 +521,6 @@ function App() {
         } else {
           setProfile(null);
         }
-        await loadSticks();
       }
     );
 
@@ -1120,6 +1147,25 @@ function App() {
           onRejectFriend={rejectFriend}
         />
       )}
+      {publicProfile && user && (
+        <PublicProfilePanel
+          profile={publicProfile}
+          currentUserId={user.id}
+          friendship={publicProfileFriendship}
+          stickCount={
+            ranking.find(
+              (entry) =>
+                entry.user_id === publicProfile.id
+            )?.stick_count ?? 0
+          }
+          onClose={() =>
+            setPublicProfile(null)
+          }
+          onSendRequest={
+            handleSendFriendRequest
+          }
+        />
+      )}
       {user && pendingSticks.length > 0 && (
         <button
           className="validation-button"
@@ -1230,7 +1276,10 @@ function App() {
               ✕
             </button>
 
-            <Ranking ranking={ranking} />
+            <Ranking
+              ranking={ranking}
+              onSelectUser={openPublicProfile}
+            />
           </div>
         </div>
       )}
@@ -1267,7 +1316,6 @@ function App() {
           onReportMissing={reportMissingStick}
           isAdmin={isAdmin}
           onDelete={deleteSelectedStick}
-          user={user}
         />
       )}
       {isAdmin && (

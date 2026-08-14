@@ -15,7 +15,6 @@ type StickDetailsProps = {
     photoUrl: string | null;
 
     currentUserId: string | null;
-    user: User | null;
 
     onClose: () => void;
     onConfirm: () => void;
@@ -32,7 +31,6 @@ export default function StickDetails({
   reports,
   photoUrl,
   currentUserId,
-  user,
   onClose,
   onConfirm,
   onReportMissing,
@@ -164,7 +162,7 @@ export default function StickDetails({
         )}
         </div>
       )}
-      {user && (
+      {currentUserId && (
       <div className="stick-actions">
         <button
           onClick={onConfirm}

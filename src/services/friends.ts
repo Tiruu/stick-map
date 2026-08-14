@@ -98,3 +98,22 @@ export async function getFriendProfiles(
 
   return profiles;
 }
+
+export async function getFriendshipBetween(
+  userId: string,
+  otherUserId: string
+): Promise<Friendship | null> {
+  const { data, error } = await supabase
+    .from("friendships")
+    .select("*")
+    .or(
+      `and(requester_id.eq.${userId},addressee_id.eq.${otherUserId}),and(requester_id.eq.${otherUserId},addressee_id.eq.${userId})`
+    )
+    .maybeSingle();
+
+  if (error) {
+    throw error;
+  }
+
+  return data;
+}
