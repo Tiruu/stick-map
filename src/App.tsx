@@ -23,6 +23,7 @@ import "./App.css";
 import { supabase } from "./supabase";
 import type { User } from "@supabase/supabase-js";
 import Auth from "./Auth";
+import { SpeedInsights } from "@vercel/speed-insights/react";
 
 setWorkerUrl(workerUrl);
 
@@ -1180,6 +1181,7 @@ function App() {
         </div>
       )}
       <div ref={mapContainer} className="map" />
+      <SpeedInsights />
       <Analytics />
     </>
   );
