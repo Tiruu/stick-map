@@ -24,6 +24,8 @@ type ProfilePanelProps = {
 
   onAcceptFriend: (friendshipId: string) => void;
   onRejectFriend: (friendshipId: string) => void;
+
+  onOpenFriends: () => void;
 };
 
 export default function ProfilePanel({
@@ -36,6 +38,7 @@ export default function ProfilePanel({
   onUsernameUpdated,
   onAcceptFriend,
   onRejectFriend,
+  onOpenFriends,
 }: ProfilePanelProps) {
   const [editingUsername, setEditingUsername] =
     useState(false);
@@ -307,6 +310,13 @@ export default function ProfilePanel({
             <span>classement</span>
           </div>
         </div>
+
+        <button
+          className="friends-button"
+          onClick={onOpenFriends}
+        >
+          👥 Mes amis
+        </button>
 
         {/* -------------------- */}
         {/* CONTRIBUTIONS        */}

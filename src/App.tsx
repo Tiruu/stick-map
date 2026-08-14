@@ -78,11 +78,14 @@ import {
   getStickPhotoUrl,
 } from "./services/storage";
 
+import FriendsPanel from "./components/FriendsPanel";
+
 import {
   getMyFriendships,
   getFriendshipBetween,
   sendFriendRequest,
   updateFriendshipStatus,
+  findUserByEmail,
 } from "./services/friends";
 
 setWorkerUrl(workerUrl);
@@ -135,6 +138,16 @@ function App() {
   const [friendships, setFriendships] = useState<Friendship[]>([]);
   const [publicProfile, setPublicProfile] = useState<Profile | null>(null);
   const [publicProfileFriendship, setPublicProfileFriendship] = useState<Friendship | null>(null);
+  const [showFriends, setShowFriends] = useState(false);
+  const [friendProfiles, setFriendProfiles] = useState<Profile[]>([]);
+  const [requesterProfiles, setRequesterProfiles] = useState<Record<string, Profile>>({});
+
+  const pendingFriendRequests =
+    friendships.filter(
+      (friendship) =>
+        friendship.status === "pending" &&
+        friendship.addressee_id === user?.id
+    );
 
   const geocoderApi: MaplibreGeocoderApi = {
     forwardGeocode: async (
@@ -263,6 +276,7 @@ function App() {
   async function loadFriends() {
     if (!user) {
       setFriendships([]);
+      setFriendProfiles([]);
       return;
     }
 
@@ -271,6 +285,52 @@ function App() {
         await getMyFriendships(user.id);
 
       setFriendships(data);
+
+      const accepted =
+        data.filter(
+          (friendship) =>
+            friendship.status === "accepted"
+        );
+
+      const profiles = await Promise.all(
+        accepted.map(async (friendship) => {
+          const friendId =
+            friendship.requester_id === user.id
+              ? friendship.addressee_id
+              : friendship.requester_id;
+
+          return getProfile(friendId);
+        })
+      );
+      const pendingRequests =
+        data.filter(
+          (friendship) =>
+            friendship.status === "pending" &&
+            friendship.addressee_id === user.id
+        );
+
+      const requesterEntries =
+        await Promise.all(
+          pendingRequests.map(async (request) => {
+            const requester =
+              await getProfile(
+                request.requester_id
+              );
+
+            return [
+              request.requester_id,
+              requester,
+            ] as const;
+          })
+        );
+
+      setRequesterProfiles(
+        Object.fromEntries(
+          requesterEntries
+        )
+      );
+
+      setFriendProfiles(profiles);
     } catch (error) {
       console.error(
         "Erreur chargement amis :",
@@ -353,6 +413,40 @@ function App() {
     } catch (error) {
       console.error(
         "Erreur demande d'ami :",
+        error
+      );
+    }
+  }
+
+  async function handleFriendSearch(
+    email: string
+  ) {
+    if (!user) return;
+
+    try {
+      const result =
+        await findUserByEmail(email);
+
+      if (!result) {
+        alert(
+          "Aucun utilisateur trouvé avec cet email."
+        );
+        return;
+      }
+
+      if (result.id === user.id) {
+        alert(
+          "Tu ne peux pas t'ajouter toi-même."
+        );
+        return;
+      }
+
+      await openPublicProfile(result.id);
+
+      setShowFriends(false);
+    } catch (error) {
+      console.error(
+        "Erreur recherche utilisateur :",
         error
       );
     }
@@ -1122,6 +1216,11 @@ function App() {
             setShowProfile(false)
           }
 
+          onOpenFriends={() => {
+            setShowProfile(false);
+            setShowFriends(true);
+          }}
+
           onSelectStick={(stick) => {
             setShowProfile(false);
             setSelectedStick(stick);
@@ -1165,6 +1264,23 @@ function App() {
           onSendRequest={
             handleSendFriendRequest
           }
+        />
+      )}
+      {showFriends && user && (
+        <FriendsPanel
+          friends={friendProfiles}
+          pendingRequests={pendingFriendRequests}
+          requesterProfiles={requesterProfiles}
+          onClose={() =>
+            setShowFriends(false)
+          }
+          onSelectUser={(userId) => {
+            setShowFriends(false);
+            openPublicProfile(userId);
+          }}
+          onAcceptFriend={acceptFriend}
+          onRejectFriend={rejectFriend}
+          onSearch={handleFriendSearch}
         />
       )}
       {user && pendingSticks.length > 0 && (
@@ -1317,6 +1433,10 @@ function App() {
           onReportMissing={reportMissingStick}
           isAdmin={isAdmin}
           onDelete={deleteSelectedStick}
+          onOpenAuthor={(userId) => {
+            setSelectedStick(null);
+            openPublicProfile(userId);
+          }}
         />
       )}
       {isAdmin && (

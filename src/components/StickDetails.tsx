@@ -20,6 +20,9 @@ type StickDetailsProps = {
 
     isAdmin: boolean;
     onDelete: () => void;
+    onOpenAuthor?: (
+      userId: string
+    ) => void;
 };
 
 export default function StickDetails({
@@ -34,6 +37,7 @@ export default function StickDetails({
   onReportMissing,
   isAdmin,
   onDelete,
+  onOpenAuthor,
 
 }: StickDetailsProps) {
   const isOwner =
@@ -84,9 +88,18 @@ export default function StickDetails({
 
       <p className="stick-author">
         Ajouté par{" "}
-        <strong>
-          {author?.username ?? "Inconnu"}
-        </strong>
+        {author ? (
+          <button
+            className="stick-author-button"
+            onClick={() =>
+              onOpenAuthor?.(author.id)
+            }
+          >
+            {author.username}
+          </button>
+        ) : (
+          "Inconnu"
+        )}
       </p>
 
       {photoUrl && (

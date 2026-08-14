@@ -37,6 +37,23 @@ export async function getFriendshipBetween(
   return data;
 }
 
+export async function findUserByEmail(
+  email: string
+) {
+  const { data, error } = await supabase.rpc(
+    "find_user_by_email",
+    {
+      search_email: email,
+    }
+  );
+
+  if (error) {
+    throw error;
+  }
+
+  return data?.[0] ?? null;
+}
+
 export async function sendFriendRequest(
   requesterId: string,
   addresseeId: string
