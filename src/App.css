@@ -1369,6 +1369,55 @@ button:disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }
+
+.profile-section {
+  margin-bottom: 20px;
+}
+
+.friend-request-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.friend-request {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 12px;
+
+  padding: 12px;
+
+  background: #f9fafb;
+
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+}
+
+.friend-request > span {
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.friend-request-actions {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.friend-request-actions button {
+  width: 36px;
+  height: 36px;
+
+  border: none;
+  border-radius: 8px;
+
+  background: white;
+
+  cursor: pointer;
+}
+
 /* -------------------- */
 /* MOBILE               */
 /* -------------------- */

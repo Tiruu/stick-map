@@ -4,6 +4,7 @@ import {
   Map,
   Marker,
   GeolocateControl,
+  setWorkerUrl,
   type MapMouseEvent,
   type GeoJSONSource,
 } from "maplibre-gl";
@@ -13,6 +14,7 @@ import { SpeedInsights } from "@vercel/speed-insights/react";
 import type { User } from "@supabase/supabase-js";
 
 import "maplibre-gl/dist/maplibre-gl.css";
+import workerUrl from "maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url";
 
 import MaplibreGeocoder, {
   type MaplibreGeocoderApi,
@@ -82,6 +84,8 @@ import {
   sendFriendRequest,
   updateFriendshipStatus,
 } from "./services/friends";
+
+setWorkerUrl(workerUrl);
 
 function App() {
   const [showAuth, setShowAuth] = useState(false);
