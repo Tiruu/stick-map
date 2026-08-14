@@ -79,6 +79,20 @@ import {
   rejectReviewedStick,
 } from "./services/sticks";
 
+import type {
+  Friendship,
+} from "./types";
+
+import {
+  getMyFriendships,
+  getFriendProfiles,
+} from "./services/friends";
+
+import {
+  sendFriendRequest,
+  updateFriendshipStatus,
+} from "./services/friends";
+
 function App() {
   const [showAuth, setShowAuth] = useState(false);
   const [user, setUser] = useState<User | null>(null);
@@ -123,6 +137,12 @@ function App() {
   const [photo, setPhoto] = useState<File | null>(null);
 
   const [showRanking, setShowRanking] = useState(false);
+
+  const [friendships, setFriendships] =
+  useState<Friendship[]>([]);
+
+  const [friendProfiles, setFriendProfiles] =
+  useState<Profile[]>([]);
 
   const geocoderApi: MaplibreGeocoderApi = {
     forwardGeocode: async (
@@ -243,6 +263,67 @@ function App() {
     } catch (error) {
       console.error(
         "Erreur chargement profil :",
+        error
+      );
+    }
+  }
+
+  async function loadFriends() {
+    if (!user) {
+      setFriendships([]);
+      setFriendProfiles([]);
+      return;
+    }
+
+    try {
+      const data =
+        await getMyFriendships(user.id);
+
+      setFriendships(data);
+
+      const profiles =
+        await getFriendProfiles(user.id);
+
+      setFriendProfiles(profiles);
+    } catch (error) {
+      console.error(
+        "Erreur chargement amis :",
+        error
+      );
+    }
+  }
+
+  async function acceptFriend(
+    friendshipId: string
+  ) {
+    try {
+      await updateFriendshipStatus(
+        friendshipId,
+        "accepted"
+      );
+
+      await loadFriends();
+    } catch (error) {
+      console.error(
+        "Erreur acceptation ami :",
+        error
+      );
+    }
+  }
+
+  async function rejectFriend(
+    friendshipId: string
+  ) {
+    try {
+      await updateFriendshipStatus(
+        friendshipId,
+        "rejected"
+      );
+
+      await loadFriends();
+    } catch (error) {
+      console.error(
+        "Erreur refus ami :",
         error
       );
     }
@@ -969,6 +1050,10 @@ function App() {
     }
   }
 
+  useEffect(() => {
+    loadFriends();
+  }, [user]);
+
   return (
     <>
     {!user && (
@@ -1003,7 +1088,12 @@ function App() {
           profile={profile}
           sticks={userSticks}
           ranking={ranking}
-          onClose={() => setShowProfile(false)}
+          friendships={friendships}
+
+          onClose={() =>
+            setShowProfile(false)
+          }
+
           onSelectStick={(stick) => {
             setShowProfile(false);
             setSelectedStick(stick);
@@ -1012,6 +1102,7 @@ function App() {
             loadConfirmations(stick.id);
             loadReports(stick.id);
           }}
+
           onUsernameUpdated={(username) => {
             setProfile((current) =>
               current
@@ -1024,6 +1115,9 @@ function App() {
 
             loadRanking();
           }}
+
+          onAcceptFriend={acceptFriend}
+          onRejectFriend={rejectFriend}
         />
       )}
       {user && pendingSticks.length > 0 && (

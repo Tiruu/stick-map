@@ -4,6 +4,7 @@ import type {
   Profile,
   Stick,
   RankingEntry,
+  Friendship,
 } from "../types";
 
 import { updateUsername } from "../services/profiles";
@@ -12,18 +13,32 @@ type ProfilePanelProps = {
   profile: Profile;
   sticks: Stick[];
   ranking: RankingEntry[];
+
+  friendships: Friendship[];
+
   onClose: () => void;
   onSelectStick: (stick: Stick) => void;
   onUsernameUpdated: (username: string) => void;
+
+  onAcceptFriend: (
+    friendshipId: string
+  ) => void;
+
+  onRejectFriend: (
+    friendshipId: string
+  ) => void;
 };
 
 export default function ProfilePanel({
   profile,
   sticks,
   ranking,
+  friendships,
   onClose,
   onSelectStick,
   onUsernameUpdated,
+  onAcceptFriend,
+  onRejectFriend,
 }: ProfilePanelProps) {
   const rankIndex = ranking.findIndex(
     (entry) => entry.user_id === profile.id
@@ -39,6 +54,13 @@ export default function ProfilePanel({
     const [savingUsername, setSavingUsername] = useState(false);
     const [usernameError, setUsernameError] = useState("");
 
+    const incomingRequests =
+      friendships.filter(
+        (friendship) =>
+          friendship.addressee_id === profile.id &&
+          friendship.status === "pending"
+      );
+
   return (
     <div className="profile-overlay">
       <div className="profile-panel">
@@ -48,6 +70,42 @@ export default function ProfilePanel({
         >
           ✕
         </button>
+        {incomingRequests.length > 0 && (
+          <>
+            <h3>Demandes d'amis</h3>
+
+            <div className="friend-request-list">
+              {incomingRequests.map((request) => (
+                <div
+                  key={request.id}
+                  className="friend-request"
+                >
+                  <span>
+                    Nouvelle demande
+                  </span>
+
+                  <div>
+                    <button
+                      onClick={() =>
+                        onAcceptFriend(request.id)
+                      }
+                    >
+                      ✅
+                    </button>
+
+                    <button
+                      onClick={() =>
+                        onRejectFriend(request.id)
+                      }
+                    >
+                      ❌
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </>
+        )}
 
         {!editingUsername ? (
             <div className="profile-username">
