@@ -328,49 +328,67 @@ function App() {
   useEffect(() => {
     let cancelled = false;
 
-    async function initializeAuth() {
+    async function handleUser(
+      currentUser: User | null
+    ) {
+      if (cancelled) {
+        return;
+      }
+
+      setUser(currentUser);
+
+      if (!currentUser) {
+        setProfile(null);
+        await loadRanking();
+        return;
+      }
+
       try {
-        const {
-          data: { user: currentUser },
-        } = await supabase.auth.getUser();
-
-        if (cancelled) return;
-
-        setUser(currentUser);
-
-        if (!currentUser) {
-          setProfile(null);
-          await loadRanking();
-          return;
-        }
-
         const profileData =
           await getProfile(currentUser.id);
 
-        if (cancelled) return;
+        if (cancelled) {
+          return;
+        }
 
         setProfile(profileData);
 
         await loadFriends();
-
-        if (!cancelled) {
-          await loadPendingSticks(
-            currentUser.id
-          );
-          await loadRanking();
-        }
+        await loadPendingSticks(
+          currentUser.id
+        );
+        await loadRanking();
       } catch (error) {
         console.error(
-          "Erreur initialisation authentification :",
+          "Erreur chargement utilisateur :",
           error
         );
       }
     }
 
+    async function initializeAuth() {
+      const {
+        data: { user: currentUser },
+      } = await supabase.auth.getUser();
+
+      await handleUser(currentUser);
+    }
+
     initializeAuth();
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(
+      (_event, session) => {
+        void handleUser(
+          session?.user ?? null
+        );
+      }
+    );
 
     return () => {
       cancelled = true;
+      subscription.unsubscribe();
     };
   }, [loadFriends]);
 
