@@ -1,5 +1,4 @@
 import {
-  useCallback,
   useEffect,
   useRef,
   useState,
@@ -38,8 +37,6 @@ import type {
   Stick,
   Profile,
   RankingEntry,
-  StickConfirmation,
-  StickReport,
   StickStatus,
   Friendship,
 } from "./types";
@@ -55,20 +52,7 @@ import AdminModerationPanel from "./components/AdminModerationPanel";
 
 
 import {
-  getSticks,
-  createStick,
-  getConfirmations,
-  confirmStickPresence,
-  getReports,
-  reportStickMissing,
-  getStickStatuses,
-  deleteStick,
   getUserSticks,
-  getPendingSticks,
-  voteOnStick,
-  getReviewSticks,
-  approveReviewedStick,
-  rejectReviewedStick,
 } from "./services/sticks";
 
 import {
@@ -80,7 +64,6 @@ import {
 } from "./services/ranking";
 
 import {
-  uploadStickPhoto,
   getStickPhotoUrl,
 } from "./services/storage";
 
@@ -93,6 +76,8 @@ import {
 } from "./services/friends";
 
 import { useFriends } from "./hooks/useFriends";
+import { useModeration } from "./hooks/useModeration";
+import { useSticks } from "./hooks/useSticks";
 
 setWorkerUrl(workerUrl);
 
@@ -102,29 +87,59 @@ function App() {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [showProfile, setShowProfile] = useState(false);
   const [userSticks, setUserSticks] = useState<Stick[]>([]);
-
-  const [pendingSticks, setPendingSticks] =
-    useState<Stick[]>([]);
-
-  const [showValidation, setShowValidation] =
-    useState(false);
-
-  const [validationIndex, setValidationIndex] =
-    useState(0);
   
   const isAdmin = profile?.role === "admin";
-  const [reviewSticks, setReviewSticks] = useState<Stick[]>([]);
-  const [showAdminModeration, setShowAdminModeration] = useState(false);
-  const [adminModerationIndex, setAdminModerationIndex] = useState(0);
 
   const [selectedAuthor, setSelectedAuthor] = useState<Profile | null>(null);
   const [ranking, setRanking] = useState<RankingEntry[]>([]);
-  const [confirmations, setConfirmations] = useState<StickConfirmation[]>([]);
-  const [reports, setReports] = useState<StickReport[]>([]);
-  const [stickStatuses, setStickStatuses] = useState<Record<string, StickStatus>>({});
   const sticksRef = useRef<Stick[]>([]);
 
   const addModeRef = useRef(false);
+  const [showValidation, setShowValidation] =
+  useState(false);
+
+  const [showAdminModeration, setShowAdminModeration] =
+    useState(false);
+
+  const {
+    pendingSticks,
+    reviewSticks,
+
+    validationIndex,
+    setValidationIndex,
+
+    adminModerationIndex,
+    setAdminModerationIndex,
+
+    loadPendingSticks,
+
+    handleValidationVote,
+    handleAdminApproveStick,
+    handleAdminRejectStick,
+  } = useModeration({
+    user,
+    isAdmin,
+  });
+
+  const {
+    sticks,
+
+    stickStatuses,
+
+    confirmations,
+    reports,
+
+    loadConfirmations,
+    loadReports,
+
+    saveStick,
+    confirmStick,
+    reportMissingStick,
+    deleteStickById,
+  } = useSticks({
+    user,
+    isAdmin,
+  });
 
   const mapContainer = useRef<HTMLDivElement>(null);
   const mapRef = useRef<Map | null>(null);
@@ -132,7 +147,6 @@ function App() {
 
   const [addMode, setAddMode] = useState(false);
   const [draftStick, setDraftStick] = useState<DraftStick | null>(null);
-  const [sticks, setSticks] = useState<Stick[]>([]);
 
   const [selectedStick, setSelectedStick] = useState<Stick | null>(null);
 
@@ -286,38 +300,6 @@ function App() {
     }
   }
 
-  async function loadPendingSticks(userId: string) {
-    try {
-      const data = await getPendingSticks();
-
-      const { data: votes, error } = await supabase
-        .from("stick_validation_votes")
-        .select("stick_id")
-        .eq("user_id", userId);
-
-      if (error) {
-        throw error;
-      }
-
-      const votedStickIds = new Set(
-        votes.map((vote) => vote.stick_id)
-      );
-
-      const availableSticks = data.filter(
-        (stick) =>
-          stick.user_id !== userId &&
-          !votedStickIds.has(stick.id)
-      );
-
-      setPendingSticks(availableSticks);
-    } catch (error) {
-      console.error(
-        "Erreur sticks à valider :",
-        error
-      );
-    }
-  }
-
   async function loadStickAuthor(userId: string | null) {
     if (!userId) {
       setSelectedAuthor(null);
@@ -342,96 +324,6 @@ function App() {
     }
   }
 
-  async function loadConfirmations(stickId: string) {
-    try {
-      const data = await getConfirmations(stickId);
-
-      setConfirmations(data);
-    } catch (error) {
-      console.error(
-        "Erreur chargement confirmations :",
-        error
-      );
-    }
-  }
-
-  async function loadReports(stickId: string) {
-    try {
-      const data = await getReports(stickId);
-
-      setReports(data);
-    } catch (error) {
-      console.error(
-        "Erreur chargement signalements :",
-        error
-      );
-    }
-  }
-
-  async function loadReviewSticks() {
-    if (!isAdmin) {
-      return;
-    }
-
-    try {
-      const data = await getReviewSticks();
-
-      setReviewSticks(data);
-    } catch (error) {
-      console.error(
-        "Erreur chargement modération :",
-        error
-      );
-    }
-  }
-
-  async function loadStickStatuses() {
-    try {
-      const data = await getStickStatuses();
-
-      setStickStatuses(data);
-    } catch (error) {
-      console.error(
-        "Erreur chargement statuts :",
-        error
-      );
-    }
-  }
-
-  useEffect(() => {
-    let cancelled = false;
-
-    async function loadMapData() {
-      try {
-        const [sticksData, statusesData] =
-          await Promise.all([
-            getSticks(
-              user?.id ?? null,
-              isAdmin
-            ),
-            getStickStatuses(),
-          ]);
-
-        if (cancelled) {
-          return;
-        }
-
-        setSticks(sticksData);
-        setStickStatuses(statusesData);
-      } catch (error) {
-        console.error(
-          "Erreur chargement carte :",
-          error
-        );
-      }
-    }
-
-    loadMapData();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [user, isAdmin]);
 
   useEffect(() => {
     let cancelled = false;
@@ -448,8 +340,6 @@ function App() {
 
         if (!currentUser) {
           setProfile(null);
-          setReviewSticks([]);
-          setPendingSticks([]);
           await loadRanking();
           return;
         }
@@ -460,17 +350,6 @@ function App() {
         if (cancelled) return;
 
         setProfile(profileData);
-
-        if (profileData.role === "admin") {
-          const reviewData =
-            await getReviewSticks();
-
-          if (!cancelled) {
-            setReviewSticks(reviewData);
-          }
-        } else {
-          setReviewSticks([]);
-        }
 
         await loadFriends();
 
@@ -880,44 +759,6 @@ function App() {
     setPhoto(null);
   }
 
-  async function saveStick() {
-     if (!draftStick || !user || !photo) return;
-
-    try {
-      let filePath: string | null = null;
-
-      if (photo) {
-        filePath = await uploadStickPhoto(photo);
-      }
-
-      const newStick = await createStick({
-        latitude: draftStick.lat,
-        longitude: draftStick.lng,
-        description,
-        photoPath: filePath,
-        userId: user.id,
-      });
-
-      setSticks((current) => [
-        ...current,
-        newStick,
-      ]);
-
-      await loadRanking();
-
-      markerRef.current?.remove();
-      markerRef.current = null;
-
-      setDraftStick(null);
-      setDescription("");
-      setPhoto(null);
-    } catch (error) {
-      console.error(
-        "Erreur sauvegarde stick :",
-        error
-      );
-    }
-  }
 
   useEffect(() => {
     const map = mapRef.current;
@@ -943,72 +784,25 @@ function App() {
     }
   }, [sticks, stickStatuses]);
 
-  async function confirmStick() {
-    if (!selectedStick || !user) return;
 
-    try {
-      await confirmStickPresence(
-        selectedStick.id,
-        user.id
-      );
-
-      await loadConfirmations(selectedStick.id);
-      await loadStickStatuses();
-    } catch (error) {
-      console.error(
-        "Erreur confirmation :",
-        error
-      );
+  async function handleDeleteSelectedStick() {
+    if (!selectedStick || !isAdmin) {
+      return;
     }
-  }
 
-  async function reportMissingStick() {
-    if (!selectedStick || !user) return;
+    const deleted = await deleteStickById(
+      selectedStick.id,
+      selectedStick.photo_path
+    );
 
-    try {
-      await reportStickMissing(
-        selectedStick.id,
-        user.id
-      );
-
-      await loadReports(selectedStick.id);
-      await loadStickStatuses();
-    } catch (error) {
-      console.error(
-        "Erreur signalement :",
-        error
-      );
+    if (!deleted) {
+      return;
     }
-  }
 
-  async function deleteSelectedStick() {
-    if (!selectedStick || !isAdmin) return;
+    setSelectedStick(null);
+    setSelectedAuthor(null);
 
-    try {
-      await deleteStick(
-        selectedStick.id,
-        selectedStick.photo_path
-      );
-
-      setSticks((current) =>
-        current.filter(
-          (stick) => stick.id !== selectedStick.id
-        )
-      );
-
-      setSelectedStick(null);
-      setSelectedAuthor(null);
-      setConfirmations([]);
-      setReports([]);
-
-      await loadRanking();
-      await loadStickStatuses();
-    } catch (error) {
-      console.error(
-        "Erreur suppression stick :",
-        error
-      );
-    }
+    await loadRanking();
   }
 
   async function logout() {
@@ -1018,84 +812,28 @@ function App() {
     setShowProfile(false);
   }
 
-  async function handleAdminApproveStick(
-    stick: Stick
-  ) {
-    try {
-      await approveReviewedStick(stick.id);
-
-      await loadReviewSticks();
-      await loadStickStatuses();
-
-      const data = await getSticks(
-        user?.id ?? null,
-        isAdmin
-      );
-
-      setSticks(data);
-
-      setAdminModerationIndex(0);
-    } catch (error) {
-      console.error(
-        "Erreur validation admin :",
-        error
-      );
+  async function handleSaveStick() {
+    if (!draftStick || !photo) {
+      return;
     }
-  }
 
-  async function handleAdminRejectStick(
-    stick: Stick
-  ) {
-    try {
-      await rejectReviewedStick(stick.id);
+    const newStick = await saveStick({
+      latitude: draftStick.lat,
+      longitude: draftStick.lng,
+      description,
+      photo,
+    });
 
-      await loadReviewSticks();
-      const data = await getSticks(
-        user?.id ?? null,
-        isAdmin
-      );
-
-      setSticks(data);
-      await loadStickStatuses();
-
-      setAdminModerationIndex(0);
-    } catch (error) {
-      console.error(
-        "Erreur refus admin :",
-        error
-      );
+    if (!newStick) {
+      return;
     }
-  }
 
-  async function handleValidationVote(
-    stick: Stick,
-    vote: "approve" | "reject"
-  ) {
-    if (!user) return;
+    markerRef.current?.remove();
+    markerRef.current = null;
 
-    try {
-      await voteOnStick(
-        stick.id,
-        user.id,
-        vote
-      );
-
-      await loadPendingSticks(user.id);
-      const data = await getSticks(
-        user?.id ?? null,
-        isAdmin
-      );
-
-      setSticks(data); 
-      await loadStickStatuses();
-
-      setValidationIndex(0);
-    } catch (error) {
-      console.error(
-        "Erreur vote validation :",
-        error
-      );
-    }
+    setDraftStick(null);
+    setDescription("");
+    setPhoto(null);
   }
 
   return (
@@ -1330,7 +1068,7 @@ function App() {
           photo={photo}
           onDescriptionChange={setDescription}
           onPhotoChange={setPhoto}
-          onSave={saveStick}
+          onSave={handleSaveStick}
           onCancel={cancelStick}
         />
       )}
@@ -1351,10 +1089,14 @@ function App() {
             setSelectedStick(null);
             setSelectedAuthor(null);
           }}
-          onConfirm={confirmStick}
-          onReportMissing={reportMissingStick}
+          onConfirm={() =>
+            confirmStick(selectedStick.id)
+          }
+          onReportMissing={() =>
+            reportMissingStick(selectedStick.id)
+          }
           isAdmin={isAdmin}
-          onDelete={deleteSelectedStick}
+          onDelete={handleDeleteSelectedStick}
           onOpenAuthor={(userId) => {
             setSelectedStick(null);
             openPublicProfile(userId);
