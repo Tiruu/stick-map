@@ -19,6 +19,7 @@ import {
 } from "../services/sticks";
 
 import { uploadStickPhoto } from "../services/storage";
+import { getCurrentLocation } from "../utils/geolocation";
 
 type UserLike = {
   id: string;
@@ -118,10 +119,18 @@ export function useSticks({ user, isAdmin }: UseSticksOptions) {
 
   const confirmStick = useCallback(
     async (stickId: string) => {
-      if (!user) return;
+      if (!user) {
+        return;
+      }
 
       try {
-        await confirmStickPresence(stickId, user.id);
+        const location = await getCurrentLocation();
+
+        await confirmStickPresence(
+          stickId,
+          location.latitude,
+          location.longitude,
+        );
 
         await loadConfirmations(stickId);
         await loadStickStatuses();
@@ -134,10 +143,14 @@ export function useSticks({ user, isAdmin }: UseSticksOptions) {
 
   const reportMissingStick = useCallback(
     async (stickId: string) => {
-      if (!user) return;
+      if (!user) {
+        return;
+      }
 
       try {
-        await reportStickMissing(stickId, user.id);
+        const location = await getCurrentLocation();
+
+        await reportStickMissing(stickId, location.latitude, location.longitude);
 
         await loadReports(stickId);
         await loadStickStatuses();
@@ -175,7 +188,7 @@ export function useSticks({ user, isAdmin }: UseSticksOptions) {
     loadSticks();
     loadStickStatuses();
   }, [loadSticks, loadStickStatuses]);
-
+  
   return {
     sticks,
     setSticks,

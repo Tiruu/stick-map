@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 
 import type { Stick } from "../types";
+import { getCurrentLocation } from "../utils/geolocation";
 
 import {
   getPendingSticks,
@@ -75,7 +76,14 @@ export function useModeration({ user, isAdmin }: UseModerationOptions) {
       if (!user) return;
 
       try {
-        await voteOnStick(stick.id, user.id, vote);
+        const location = await getCurrentLocation();
+
+        await voteOnStick(
+          stick.id,
+          vote,
+          location.latitude,
+          location.longitude,
+        );
 
         await loadPendingSticks(user.id);
 

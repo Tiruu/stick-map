@@ -80,18 +80,14 @@ export async function getConfirmations(
 
 export async function confirmStickPresence(
   stickId: string,
-  userId: string,
+  latitude: number,
+  longitude: number,
 ): Promise<void> {
-  const { error } = await supabase.from("stick_confirmations").upsert(
-    {
-      stick_id: stickId,
-      user_id: userId,
-      updated_at: new Date().toISOString(),
-    },
-    {
-      onConflict: "stick_id,user_id",
-    },
-  );
+  const { error } = await supabase.rpc("confirm_stick_nearby", {
+    p_stick_id: stickId,
+    p_latitude: latitude,
+    p_longitude: longitude,
+  });
 
   if (error) {
     throw error;
@@ -114,19 +110,14 @@ export async function getReports(stickId: string): Promise<StickReport[]> {
 
 export async function reportStickMissing(
   stickId: string,
-  userId: string,
+  latitude: number,
+  longitude: number,
 ): Promise<void> {
-  const { error } = await supabase.from("stick_reports").upsert(
-    {
-      stick_id: stickId,
-      user_id: userId,
-      reason: "missing",
-      updated_at: new Date().toISOString(),
-    },
-    {
-      onConflict: "stick_id,user_id",
-    },
-  );
+  const { error } = await supabase.rpc("report_stick_missing_nearby", {
+    p_stick_id: stickId,
+    p_latitude: latitude,
+    p_longitude: longitude,
+  });
 
   if (error) {
     throw error;
@@ -259,25 +250,22 @@ export async function getPendingSticks(): Promise<Stick[]> {
 
 export async function voteOnStick(
   stickId: string,
-  userId: string,
   vote: "approve" | "reject",
+  latitude: number,
+  longitude: number,
 ): Promise<void> {
-  const { error } = await supabase.from("stick_validation_votes").upsert(
-    {
-      stick_id: stickId,
-      user_id: userId,
-      vote,
-      updated_at: new Date().toISOString(),
-    },
-    {
-      onConflict: "stick_id,user_id",
-    },
-  );
+  const { error } = await supabase.rpc("vote_on_stick_nearby", {
+    p_stick_id: stickId,
+    p_vote: vote,
+    p_latitude: latitude,
+    p_longitude: longitude,
+  });
 
   if (error) {
     throw error;
   }
 }
+
 export async function getReviewSticks(): Promise<Stick[]> {
   const { data, error } = await supabase
     .from("sticks")
