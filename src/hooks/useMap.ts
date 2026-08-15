@@ -51,6 +51,7 @@ export function useMap({
     markerRef.current?.remove();
     markerRef.current = null;
   }
+  const onAddLocationRef = useRef(onAddLocation);
 
     useEffect(() => {
         sticksRef.current = sticks;
@@ -64,6 +65,11 @@ export function useMap({
         onStickClickRef.current =
         onStickClick;
     }, [onStickClick]);
+
+    useEffect(() => {
+        onAddLocationRef.current =
+        onAddLocation;
+    }, [onAddLocation]);
 
   useEffect(() => {
     if (!mapContainer.current) {
@@ -494,7 +500,10 @@ export function useMap({
             .addTo(map);
         }
 
-        onAddLocation(lng, lat);
+        onAddLocationRef.current(
+            lng,
+            lat
+        );
     };
 
     map.once(
@@ -508,7 +517,7 @@ export function useMap({
         handleClick
         );
     };
-    }, [addMode, onAddLocation]);
+    }, [addMode]);
 
   useEffect(() => {
     const map = mapRef.current;

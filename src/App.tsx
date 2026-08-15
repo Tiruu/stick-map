@@ -1,32 +1,15 @@
-import {
-  useEffect,
-  useRef,
-  useState,
-} from "react";
-
-import {
-  setWorkerUrl,
-} from "maplibre-gl";
-
+import { useEffect, useRef, useState} from "react";
+import { setWorkerUrl } from "maplibre-gl";
 import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/react";
 import type { User } from "@supabase/supabase-js";
-
 import "maplibre-gl/dist/maplibre-gl.css";
 import workerUrl from "maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url";
-
 import "@maplibre/maplibre-gl-geocoder/dist/maplibre-gl-geocoder.css";
-
 import "./App.css";
 import { supabase } from "./supabase";
 import Auth from "./Auth";
-
-import type {
-  DraftStick,
-  Stick,
-  Profile,
-} from "./types";
-
+import type { DraftStick, Stick, Profile } from "./types";
 import Ranking from "./components/Ranking";
 import UserPanel from "./components/UserPanel";
 import ProfilePanel from "./components/ProfilePanel";
@@ -35,33 +18,17 @@ import StickForm from "./components/StickForm";
 import StickDetails from "./components/StickDetails";
 import ValidationPanel from "./components/ValidationPanel";
 import AdminModerationPanel from "./components/AdminModerationPanel";
-
-
-import {
-  getUserSticks,
-} from "./services/sticks";
-
-import {
-  getProfile,
-} from "./services/profiles";
-
-import {
-  getStickPhotoUrl,
-} from "./services/storage";
-
+import { getUserSticks } from "./services/sticks";
+import { getProfile } from "./services/profiles";
+import { getStickPhotoUrl } from "./services/storage";
 import FriendsPanel from "./components/FriendsPanel";
-
-import {
-  findUserByEmail,
-} from "./services/friends";
-
+import { findUserByEmail } from "./services/friends";
 import { useFriends } from "./hooks/useFriends";
 import { useModeration } from "./hooks/useModeration";
 import { useSticks } from "./hooks/useSticks";
 import { useRanking } from "./hooks/useRanking";
 import { usePublicProfile } from "./hooks/usePublicProfile";
 import { useMap } from "./hooks/useMap";
-
 setWorkerUrl(workerUrl);
 
 function App() {
@@ -138,7 +105,7 @@ function App() {
     closePublicProfile,
   } = usePublicProfile(user);
 
-  const {clearAddMarker} = useMap({
+  const { clearAddMarker } = useMap({
     mapContainer,
     sticks,
     stickStatuses,
