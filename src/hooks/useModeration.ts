@@ -21,9 +21,10 @@ type UserLike = {
 type UseModerationOptions = {
   user: UserLike;
   isAdmin: boolean;
+  onError: (message: string) => void;
 };
 
-export function useModeration({ user, isAdmin }: UseModerationOptions) {
+export function useModeration({ user, isAdmin, onError, }: UseModerationOptions) {
   const [pendingSticks, setPendingSticks] = useState<Stick[]>([]);
 
   const [reviewSticks, setReviewSticks] = useState<Stick[]>([]);
@@ -92,10 +93,10 @@ export function useModeration({ user, isAdmin }: UseModerationOptions) {
       } catch (error) {
         console.error("Erreur validation :", error);
 
-        alert(getActionErrorMessage(error));
+        onError(getActionErrorMessage(error));
       }
     },
-    [user, loadPendingSticks],
+    [user, loadPendingSticks, onError],
   );
 
   const handleAdminApproveStick = useCallback(

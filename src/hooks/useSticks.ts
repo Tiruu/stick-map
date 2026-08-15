@@ -38,9 +38,10 @@ type SaveStickParams = {
 type UseSticksOptions = {
   user: UserLike;
   isAdmin: boolean;
+  onError: (message: string) => void;
 };
 
-export function useSticks({ user, isAdmin }: UseSticksOptions) {
+export function useSticks({ user, isAdmin, onError, }: UseSticksOptions) {
   const [sticks, setSticks] = useState<Stick[]>([]);
 
   const [stickStatuses, setStickStatuses] = useState<
@@ -124,7 +125,7 @@ export function useSticks({ user, isAdmin }: UseSticksOptions) {
       } catch (error) {
         console.error("Erreur sauvegarde stick :", error);
 
-        alert(getActionErrorMessage(error));
+        onError(getActionErrorMessage(error));
 
         return null;
       }
@@ -160,7 +161,7 @@ export function useSticks({ user, isAdmin }: UseSticksOptions) {
       } catch (error) {
         console.error("Erreur confirmation :", error);
 
-        alert(getActionErrorMessage(error));
+        onError(getActionErrorMessage(error));
       }
     },
     [user, loadConfirmations, loadStickStatuses],
@@ -186,7 +187,7 @@ export function useSticks({ user, isAdmin }: UseSticksOptions) {
       } catch (error) {
         console.error("Erreur signalement :", error);
 
-        alert(getActionErrorMessage(error));
+        onError(getActionErrorMessage(error));
       }
     },
     [user, loadReports, loadStickStatuses],

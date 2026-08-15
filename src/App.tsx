@@ -29,6 +29,7 @@ import { useSticks } from "./hooks/useSticks";
 import { useRanking } from "./hooks/useRanking";
 import { usePublicProfile } from "./hooks/usePublicProfile";
 import { useMap } from "./hooks/useMap";
+import Toast from "./components/Toast";
 setWorkerUrl(workerUrl);
 
 function App() {
@@ -41,6 +42,7 @@ function App() {
   const [selectedAuthor, setSelectedAuthor] = useState<Profile | null>(null);
   const [showValidation, setShowValidation] = useState(false);
   const [showAdminModeration, setShowAdminModeration] = useState(false);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
   const {
     pendingSticks,
     reviewSticks,
@@ -57,6 +59,7 @@ function App() {
   } = useModeration({
     user,
     isAdmin,
+    onError: setToastMessage,
   });
   const {
     sticks,
@@ -76,6 +79,7 @@ function App() {
   } = useSticks({
     user,
     isAdmin,
+    onError: setToastMessage,
   });
   const mapContainer = useRef<HTMLDivElement>(null);
   const [addMode, setAddMode] = useState(false);
@@ -102,27 +106,22 @@ function App() {
     handleSendFriendRequest,
     closePublicProfile,
   } = usePublicProfile(user);
-
   const { clearAddMarker } = useMap({
     mapContainer,
     sticks,
     stickStatuses,
     addMode,
-
     onStickClick: (stick) => {
       setSelectedStick(stick);
-
       loadStickAuthor(stick.user_id);
       loadConfirmations(stick.id);
       loadReports(stick.id);
     },
-
     onAddLocation: (longitude, latitude) => {
       setDraftStick({
         lng: longitude,
         lat: latitude,
       });
-
       setAddMode(false);
     },
   });
@@ -528,6 +527,9 @@ function App() {
         <div className="admin-panel">
           <strong>Mode développeur</strong>
         </div>
+      )}
+      {toastMessage && (
+        <Toast message={toastMessage} onClose={() => setToastMessage(null)} />
       )}
       <div ref={mapContainer} className="map" />
       <SpeedInsights />
