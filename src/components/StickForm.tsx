@@ -1,13 +1,15 @@
 import { useEffect, useState } from "react";
-import type { DraftStick } from "../types";
+import type { DraftStick, StickOrigin } from "../types";
 
 type StickFormProps = {
   draftStick: DraftStick;
   description: string;
   photo: File | null;
+  originType: StickOrigin | null;
 
   onDescriptionChange: (value: string) => void;
   onPhotoChange: (file: File | null) => void;
+  onOriginTypeChange: (value: StickOrigin) => void;
 
   onSave: () => void;
   onCancel: () => void;
@@ -17,8 +19,10 @@ export default function StickForm({
   draftStick,
   description,
   photo,
+  originType,
   onDescriptionChange,
   onPhotoChange,
+  onOriginTypeChange,
   onSave,
   onCancel,
 }: StickFormProps) {
@@ -85,6 +89,34 @@ export default function StickForm({
 
       <p className="photo-help">Une photo prise sur place est obligatoire.</p>
 
+      <div className="origin-choice">
+        <p>Comment as-tu trouvé ce stick ?</p>
+
+        <div className="origin-buttons">
+          <button
+            type="button"
+            className={
+              originType === "seen" ? "origin-button selected" : "origin-button"
+            }
+            onClick={() => onOriginTypeChange("seen")}
+          >
+            👀 Je l'ai vu
+          </button>
+
+          <button
+            type="button"
+            className={
+              originType === "pasted"
+                ? "origin-button selected"
+                : "origin-button"
+            }
+            onClick={() => onOriginTypeChange("pasted")}
+          >
+            🧷 Je l'ai collé
+          </button>
+        </div>
+      </div>
+
       <label>
         Description
         <textarea
@@ -97,7 +129,7 @@ export default function StickForm({
       <div className="form-buttons">
         <button onClick={onCancel}>Annuler</button>
 
-        <button onClick={onSave} disabled={!photo}>
+        <button onClick={onSave} disabled={!photo || !originType}>
           Ajouter
         </button>
       </div>

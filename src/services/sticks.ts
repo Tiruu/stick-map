@@ -5,6 +5,7 @@ import type {
   StickConfirmation,
   StickReport,
   StickStatus,
+  StickOrigin,
 } from "../types";
 
 export async function getSticks(
@@ -36,12 +37,14 @@ export async function createStick({
   description,
   photoPath,
   userId,
+  originType,
 }: {
   latitude: number;
   longitude: number;
   description: string;
   photoPath: string | null;
   userId: string;
+  originType: StickOrigin;
 }): Promise<Stick> {
   const { data, error } = await supabase
     .from("sticks")
@@ -51,6 +54,7 @@ export async function createStick({
       description,
       photo_path: photoPath,
       user_id: userId,
+      origin_type: originType,
     })
     .select()
     .single();

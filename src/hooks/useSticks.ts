@@ -5,6 +5,7 @@ import type {
   StickConfirmation,
   StickReport,
   StickStatus,
+  StickOrigin,
 } from "../types";
 
 import {
@@ -30,6 +31,7 @@ type SaveStickParams = {
   longitude: number;
   description: string;
   photo: File;
+  originType: StickOrigin;
 };
 
 type UseSticksOptions = {
@@ -89,7 +91,7 @@ export function useSticks({ user, isAdmin }: UseSticksOptions) {
   }, []);
 
   const saveStick = useCallback(
-    async ({ latitude, longitude, description, photo }: SaveStickParams) => {
+    async ({ latitude, longitude, description, photo, originType, }: SaveStickParams) => {
       if (!user) {
         return null;
       }
@@ -103,6 +105,7 @@ export function useSticks({ user, isAdmin }: UseSticksOptions) {
           description,
           photoPath,
           userId: user.id,
+          originType,
         });
 
         setSticks((current) => [...current, newStick]);

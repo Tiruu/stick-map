@@ -11,6 +11,7 @@ export type Stick = {
   photo_path: string | null;
   user_id: string | null;
   created_at: string;
+  origin_type: StickOrigin | null;
 
   moderation_status: "pending" | "approved" | "review" | "rejected";
 };
@@ -56,3 +57,5 @@ export type Friendship = {
   created_at: string;
   updated_at: string;
 };
+
+export type StickOrigin = "seen" | "pasted";

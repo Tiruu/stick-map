@@ -9,7 +9,7 @@ import "@maplibre/maplibre-gl-geocoder/dist/maplibre-gl-geocoder.css";
 import "./App.css";
 import { supabase } from "./supabase";
 import Auth from "./Auth";
-import type { DraftStick, Stick, Profile } from "./types";
+import type { DraftStick, Stick, Profile, StickOrigin } from "./types";
 import Ranking from "./components/Ranking";
 import UserPanel from "./components/UserPanel";
 import ProfilePanel from "./components/ProfilePanel";
@@ -83,6 +83,7 @@ function App() {
   const [selectedStick, setSelectedStick] = useState<Stick | null>(null);
   const [description, setDescription] = useState("");
   const [photo, setPhoto] = useState<File | null>(null);
+  const [originType, setOriginType] = useState<StickOrigin | null>(null);
   const [showRanking, setShowRanking] = useState(false);
   const [showFriends, setShowFriends] = useState(false);
   const {
@@ -246,6 +247,7 @@ function App() {
     setDraftStick(null);
     setDescription("");
     setPhoto(null);
+    setOriginType(null);
   }
 
   async function handleDeleteSelectedStick() {
@@ -276,7 +278,7 @@ function App() {
   }
 
   async function handleSaveStick() {
-    if (!draftStick || !photo) {
+    if (!draftStick || !photo || !originType) {
       return;
     }
 
@@ -285,6 +287,7 @@ function App() {
       longitude: draftStick.lng,
       description,
       photo,
+      originType,
     });
 
     if (!newStick) {
@@ -296,6 +299,7 @@ function App() {
     setDraftStick(null);
     setDescription("");
     setPhoto(null);
+    setOriginType(null);
   }
 
   return (
@@ -485,8 +489,10 @@ function App() {
           draftStick={draftStick}
           description={description}
           photo={photo}
+          originType={originType}
           onDescriptionChange={setDescription}
           onPhotoChange={setPhoto}
+          onOriginTypeChange={setOriginType}
           onSave={handleSaveStick}
           onCancel={cancelStick}
         />
