@@ -21,6 +21,7 @@ import {
 
 import { uploadStickPhoto } from "../services/storage";
 import { getCurrentLocation } from "../utils/geolocation";
+import { getActionErrorMessage } from "../utils/actionErrors";
 
 type UserLike = {
   id: string;
@@ -123,6 +124,8 @@ export function useSticks({ user, isAdmin }: UseSticksOptions) {
       } catch (error) {
         console.error("Erreur sauvegarde stick :", error);
 
+        alert(getActionErrorMessage(error));
+
         return null;
       }
     },
@@ -156,6 +159,8 @@ export function useSticks({ user, isAdmin }: UseSticksOptions) {
         await loadStickStatuses();
       } catch (error) {
         console.error("Erreur confirmation :", error);
+
+        alert(getActionErrorMessage(error));
       }
     },
     [user, loadConfirmations, loadStickStatuses],
@@ -170,12 +175,18 @@ export function useSticks({ user, isAdmin }: UseSticksOptions) {
       try {
         const location = await getCurrentLocation();
 
-        await reportStickMissing(stickId, location.latitude, location.longitude);
+        await reportStickMissing(
+          stickId,
+          location.latitude,
+          location.longitude,
+        );
 
         await loadReports(stickId);
         await loadStickStatuses();
       } catch (error) {
         console.error("Erreur signalement :", error);
+
+        alert(getActionErrorMessage(error));
       }
     },
     [user, loadReports, loadStickStatuses],

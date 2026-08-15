@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 
 import type { Stick } from "../types";
 import { getCurrentLocation } from "../utils/geolocation";
+import { getActionErrorMessage } from "../utils/actionErrors";
 
 import {
   getPendingSticks,
@@ -89,7 +90,9 @@ export function useModeration({ user, isAdmin }: UseModerationOptions) {
 
         setValidationIndex(0);
       } catch (error) {
-        console.error("Erreur vote validation :", error);
+        console.error("Erreur validation :", error);
+
+        alert(getActionErrorMessage(error));
       }
     },
     [user, loadPendingSticks],
