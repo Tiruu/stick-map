@@ -36,34 +36,33 @@ export async function createStick({
   longitude,
   description,
   photoPath,
-  userId,
   originType,
+  userLatitude,
+  userLongitude,
 }: {
   latitude: number;
   longitude: number;
   description: string;
   photoPath: string | null;
-  userId: string;
   originType: StickOrigin;
+  userLatitude: number;
+  userLongitude: number;
 }): Promise<Stick> {
-  const { data, error } = await supabase
-    .from("sticks")
-    .insert({
-      latitude,
-      longitude,
-      description,
-      photo_path: photoPath,
-      user_id: userId,
-      origin_type: originType,
-    })
-    .select()
-    .single();
+  const { data, error } = await supabase.rpc("create_stick_nearby", {
+    p_latitude: latitude,
+    p_longitude: longitude,
+    p_description: description,
+    p_photo_path: photoPath,
+    p_origin_type: originType,
+    p_user_latitude: userLatitude,
+    p_user_longitude: userLongitude,
+  });
 
   if (error) {
     throw error;
   }
 
-  return data;
+  return data as Stick;
 }
 
 export async function getConfirmations(

@@ -91,12 +91,20 @@ export function useSticks({ user, isAdmin }: UseSticksOptions) {
   }, []);
 
   const saveStick = useCallback(
-    async ({ latitude, longitude, description, photo, originType, }: SaveStickParams) => {
+    async ({
+      latitude,
+      longitude,
+      description,
+      photo,
+      originType,
+    }: SaveStickParams) => {
       if (!user) {
         return null;
       }
 
       try {
+        const location = await getCurrentLocation();
+
         const photoPath = await uploadStickPhoto(photo);
 
         const newStick = await createStick({
@@ -104,8 +112,9 @@ export function useSticks({ user, isAdmin }: UseSticksOptions) {
           longitude,
           description,
           photoPath,
-          userId: user.id,
           originType,
+          userLatitude: location.latitude,
+          userLongitude: location.longitude,
         });
 
         setSticks((current) => [...current, newStick]);
