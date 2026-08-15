@@ -12,21 +12,46 @@ import MaplibreGeocoder, {
   type MaplibreGeocoderFeatureResults,
 } from "@maplibre/maplibre-gl-geocoder";
 
+import type {
+  Stick,
+  StickStatus,
+} from "../types";
+
 import { sticksToGeoJSON } from "../utils/sticksGeoJSON";
 import { MAP_COLORS } from "../utils/mapColors";
 
 type UseMapOptions = {
   mapContainer: React.RefObject<HTMLDivElement | null>;
-  sticks: Parameters<typeof sticksToGeoJSON>[0];
-  stickStatuses: Parameters<typeof sticksToGeoJSON>[1];
+  sticks: Stick[];
+  stickStatuses: Record<string, StickStatus>;
+  addMode: boolean;
+  onStickClick: (stick: Stick) => void;
 };
 
 export function useMap({
   mapContainer,
   sticks,
   stickStatuses,
+  addMode,
+  onStickClick,
 }: UseMapOptions) {
   const mapRef = useRef<Map | null>(null);
+  const sticksRef = useRef<Stick[]>(sticks);
+  const addModeRef = useRef(addMode);
+  const onStickClickRef = useRef(onStickClick);
+
+    useEffect(() => {
+        sticksRef.current = sticks;
+    }, [sticks]);
+
+    useEffect(() => {
+        addModeRef.current = addMode;
+    }, [addMode]);
+
+    useEffect(() => {
+        onStickClickRef.current =
+        onStickClick;
+    }, [onStickClick]);
 
   useEffect(() => {
     if (!mapContainer.current) {
@@ -257,6 +282,159 @@ export function useMap({
         },
       });
     });
+
+    map.on(
+        "click",
+        "stick-points",
+        (event) => {
+            if (addModeRef.current) {
+            return;
+            }
+
+            const feature =
+            event.features?.[0];
+
+            if (!feature) {
+            return;
+            }
+
+            const stickId =
+            feature.properties?.id;
+
+            if (!stickId) {
+            return;
+            }
+
+            const stick =
+            sticksRef.current.find(
+                (item) =>
+                item.id === stickId
+            );
+
+            if (!stick) {
+            return;
+            }
+
+            onStickClickRef.current(stick);
+
+            const isMobile =
+            window.innerWidth <= 700;
+
+            map.easeTo({
+            center: [
+                stick.longitude,
+                stick.latitude,
+            ],
+
+            zoom: Math.max(
+                map.getZoom(),
+                18
+            ),
+
+            offset: isMobile
+                ? [0, -140]
+                : [-180, 0],
+
+            duration: 2000,
+            });
+        }
+    );
+    map.on(
+        "click",
+        "stick-clusters",
+        async (event) => {
+            if (addModeRef.current) {
+            return;
+            }
+
+            const features =
+            map.queryRenderedFeatures(
+                event.point,
+                {
+                layers: [
+                    "stick-clusters",
+                ],
+                }
+            );
+
+            const feature = features[0];
+
+            if (!feature) {
+            return;
+            }
+
+            const clusterId =
+            feature.properties?.cluster_id;
+
+            if (clusterId === undefined) {
+            return;
+            }
+
+            const source =
+            map.getSource(
+                "sticks"
+            ) as GeoJSONSource;
+
+            const zoom =
+            await source.getClusterExpansionZoom(
+                clusterId
+            );
+
+            if (
+            feature.geometry.type !==
+            "Point"
+            ) {
+            return;
+            }
+
+            map.easeTo({
+            center:
+                feature.geometry
+                .coordinates as [
+                number,
+                number
+                ],
+
+            zoom,
+            duration: 350,
+            });
+        }
+    );
+    map.on(
+        "mouseenter",
+        "stick-points",
+        () => {
+            map.getCanvas().style.cursor =
+            "pointer";
+        }
+    );
+
+    map.on(
+        "mouseleave",
+        "stick-points",
+        () => {
+            map.getCanvas().style.cursor =
+            "";
+        }
+    );
+
+    map.on(
+        "mouseenter",
+        "stick-clusters",
+        () => {
+            map.getCanvas().style.cursor =
+            "pointer";
+        }
+    );
+
+    map.on(
+        "mouseleave",
+        "stick-clusters",
+        () => {
+            map.getCanvas().style.cursor =
+            "";
+        }
+    );
 
     map.touchZoomRotate.disableRotation();
 

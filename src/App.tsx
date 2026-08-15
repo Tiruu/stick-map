@@ -8,7 +8,6 @@ import {
   Marker,
   setWorkerUrl,
   type MapMouseEvent,
-  type GeoJSONSource,
 } from "maplibre-gl";
 
 import { Analytics } from "@vercel/analytics/react";
@@ -63,7 +62,6 @@ import { useModeration } from "./hooks/useModeration";
 import { useSticks } from "./hooks/useSticks";
 import { useRanking } from "./hooks/useRanking";
 import { usePublicProfile } from "./hooks/usePublicProfile";
-import { sticksToGeoJSON } from "./utils/sticksGeoJSON";
 import { useMap } from "./hooks/useMap";
 
 setWorkerUrl(workerUrl);
@@ -74,19 +72,10 @@ function App() {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [showProfile, setShowProfile] = useState(false);
   const [userSticks, setUserSticks] = useState<Stick[]>([]);
-  
   const isAdmin = profile?.role === "admin";
-
   const [selectedAuthor, setSelectedAuthor] = useState<Profile | null>(null);
-  const sticksRef = useRef<Stick[]>([]);
-
-  const addModeRef = useRef(false);
-  const [showValidation, setShowValidation] =
-  useState(false);
-
-  const [showAdminModeration, setShowAdminModeration] =
-    useState(false);
-
+  const [showValidation, setShowValidation] = useState(false);
+  const [showAdminModeration, setShowAdminModeration] = useState(false);
   const {
     pendingSticks,
     reviewSticks,
@@ -104,7 +93,6 @@ function App() {
     user,
     isAdmin,
   });
-
   const {
     sticks,
 
@@ -124,21 +112,15 @@ function App() {
     user,
     isAdmin,
   });
-
   const mapContainer = useRef<HTMLDivElement>(null);
   const markerRef = useRef<Marker | null>(null);
-
   const [addMode, setAddMode] = useState(false);
   const [draftStick, setDraftStick] = useState<DraftStick | null>(null);
-
   const [selectedStick, setSelectedStick] = useState<Stick | null>(null);
-
   const [description, setDescription] = useState("");
   const [photo, setPhoto] = useState<File | null>(null);
-
   const [showRanking, setShowRanking] = useState(false);
   const [showFriends, setShowFriends] = useState(false);
-
   const {
     friendships,
     friendProfiles,
@@ -147,12 +129,10 @@ function App() {
     acceptFriend,
     rejectFriend,
   } = useFriends(user);
-
   const {
     ranking,
     loadRanking,
   } = useRanking();
-
   const {
     publicProfile,
     publicProfileFriendship,
@@ -180,6 +160,15 @@ function App() {
     mapContainer,
     sticks,
     stickStatuses,
+    addMode,
+
+    onStickClick: (stick) => {
+      setSelectedStick(stick);
+
+      loadStickAuthor(stick.user_id);
+      loadConfirmations(stick.id);
+      loadReports(stick.id);
+    },
   });
 
   async function handleFriendSearch(
@@ -303,14 +292,6 @@ function App() {
   }, [user]);
 
   useEffect(() => {
-    sticksRef.current = sticks;
-  }, [sticks]);
-
-  useEffect(() => {
-    addModeRef.current = addMode;
-  }, [addMode]);
-
-  useEffect(() => {
     const map = mapRef.current;
 
     if (!map) return;
@@ -358,32 +339,6 @@ function App() {
     setDescription("");
     setPhoto(null);
   }
-
-
-  useEffect(() => {
-    const map = mapRef.current;
-
-    if (!map) return;
-
-    const updateSource = () => {
-      const source = map.getSource(
-        "sticks"
-      ) as GeoJSONSource | undefined;
-
-      if (!source) return;
-
-      source.setData(
-        sticksToGeoJSON(sticks, stickStatuses)
-      );
-    };
-
-    if (map.isStyleLoaded()) {
-      updateSource();
-    } else {
-      map.once("load", updateSource);
-    }
-  }, [sticks, stickStatuses]);
-
 
   async function handleDeleteSelectedStick() {
     if (!selectedStick || !isAdmin) {
