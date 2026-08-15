@@ -65,16 +65,6 @@ export function useMap({
         onStickClick;
     }, [onStickClick]);
 
-    useEffect(() => {
-        if (!addMode) {
-            return;
-        }
-
-        return () => {
-            clearAddMarker();
-        };
-    }, [addMode]);
-
   useEffect(() => {
     if (!mapContainer.current) {
       return;
