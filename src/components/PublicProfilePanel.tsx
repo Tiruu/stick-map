@@ -1,7 +1,4 @@
-import type {
-  Profile,
-  Friendship,
-} from "../types";
+import type { Profile, Friendship } from "../types";
 
 type PublicProfilePanelProps = {
   profile: Profile;
@@ -22,11 +19,9 @@ export default function PublicProfilePanel({
   onClose,
   onSendRequest,
 }: PublicProfilePanelProps) {
-  const isOwnProfile =
-    profile.id === currentUserId;
+  const isOwnProfile = profile.id === currentUserId;
 
-  const isFriend =
-    friendship?.status === "accepted";
+  const isFriend = friendship?.status === "accepted";
 
   const requestSent =
     friendship?.status === "pending" &&
@@ -39,10 +34,7 @@ export default function PublicProfilePanel({
   return (
     <div className="profile-overlay">
       <div className="profile-panel">
-        <button
-          className="close-profile"
-          onClick={onClose}
-        >
+        <button className="close-profile" onClick={onClose}>
           ✕
         </button>
 
@@ -57,28 +49,14 @@ export default function PublicProfilePanel({
 
         {!isOwnProfile && (
           <div className="friend-action">
-            {isFriend && (
-              <button disabled>
-                ✅ Amis
-              </button>
-            )}
+            {isFriend && <button disabled>✅ Amis</button>}
 
-            {requestSent && (
-              <button disabled>
-                Demande envoyée
-              </button>
-            )}
+            {requestSent && <button disabled>Demande envoyée</button>}
 
-            {requestReceived && (
-              <button disabled>
-                Demande reçue
-              </button>
-            )}
+            {requestReceived && <button disabled>Demande reçue</button>}
 
             {!friendship && (
-              <button onClick={onSendRequest}>
-                ➕ Ajouter en ami
-              </button>
+              <button onClick={onSendRequest}>➕ Ajouter en ami</button>
             )}
           </div>
         )}

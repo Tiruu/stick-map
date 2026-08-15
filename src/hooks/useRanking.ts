@@ -11,10 +11,7 @@ export function useRanking() {
       const data = await getRanking();
       setRanking(data);
     } catch (error) {
-      console.error(
-        "Erreur classement :",
-        error
-      );
+      console.error("Erreur classement :", error);
     }
   }, []);
 

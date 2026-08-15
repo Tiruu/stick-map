@@ -14,10 +14,7 @@ import MaplibreGeocoder, {
   type MaplibreGeocoderFeatureResults,
 } from "@maplibre/maplibre-gl-geocoder";
 
-import type {
-  Stick,
-  StickStatus,
-} from "../types";
+import type { Stick, StickStatus } from "../types";
 
 import { sticksToGeoJSON } from "../utils/sticksGeoJSON";
 import { MAP_COLORS } from "../utils/mapColors";
@@ -28,10 +25,7 @@ type UseMapOptions = {
   stickStatuses: Record<string, StickStatus>;
   addMode: boolean;
   onStickClick: (stick: Stick) => void;
-  onAddLocation: (
-    longitude: number,
-    latitude: number
-  ) => void;
+  onAddLocation: (longitude: number, latitude: number) => void;
 };
 
 export function useMap({
@@ -50,26 +44,24 @@ export function useMap({
   const clearAddMarker = () => {
     markerRef.current?.remove();
     markerRef.current = null;
-  }
+  };
   const onAddLocationRef = useRef(onAddLocation);
 
-    useEffect(() => {
-        sticksRef.current = sticks;
-    }, [sticks]);
+  useEffect(() => {
+    sticksRef.current = sticks;
+  }, [sticks]);
 
-    useEffect(() => {
-        addModeRef.current = addMode;
-    }, [addMode]);
+  useEffect(() => {
+    addModeRef.current = addMode;
+  }, [addMode]);
 
-    useEffect(() => {
-        onStickClickRef.current =
-        onStickClick;
-    }, [onStickClick]);
+  useEffect(() => {
+    onStickClickRef.current = onStickClick;
+  }, [onStickClick]);
 
-    useEffect(() => {
-        onAddLocationRef.current =
-        onAddLocation;
-    }, [onAddLocation]);
+  useEffect(() => {
+    onAddLocationRef.current = onAddLocation;
+  }, [onAddLocation]);
 
   useEffect(() => {
     if (!mapContainer.current) {
@@ -78,8 +70,7 @@ export function useMap({
 
     const map = new Map({
       container: mapContainer.current,
-      style:
-        "https://tiles.openfreemap.org/styles/liberty",
+      style: "https://tiles.openfreemap.org/styles/liberty",
       center: [3.57, 47.8],
       zoom: 12,
       dragRotate: false,
@@ -89,10 +80,9 @@ export function useMap({
 
     const geocoderApi: MaplibreGeocoderApi = {
       forwardGeocode: async (
-        config: MaplibreGeocoderApiConfig
+        config: MaplibreGeocoderApiConfig,
       ): Promise<MaplibreGeocoderFeatureResults> => {
-        const features: MaplibreGeocoderFeatureResults["features"] =
-          [];
+        const features: MaplibreGeocoderFeatureResults["features"] = [];
 
         if (typeof config.query !== "string") {
           return {
@@ -109,15 +99,14 @@ export function useMap({
                 format: "geojson",
                 addressdetails: "1",
                 limit: "5",
-              })
+              }),
           );
 
           const geojson = await response.json();
           const seen = new Set<string>();
 
           for (const feature of geojson.features) {
-            const displayName =
-              feature.properties.display_name;
+            const displayName = feature.properties.display_name;
 
             if (seen.has(displayName)) {
               continue;
@@ -136,10 +125,7 @@ export function useMap({
             });
           }
         } catch (error) {
-          console.error(
-            "Erreur recherche adresse :",
-            error
-          );
+          console.error("Erreur recherche adresse :", error);
         }
 
         return {
@@ -167,28 +153,24 @@ export function useMap({
           showUserLocation: true,
           showAccuracyCircle: true,
         }),
-        "top-right"
+        "top-right",
       );
 
-      const geocoder = new MaplibreGeocoder(
-        geocoderApi,
-        {
-          maplibregl: {
-            Map,
-          },
+      const geocoder = new MaplibreGeocoder(geocoderApi, {
+        maplibregl: {
+          Map,
+        },
 
-          placeholder:
-            "Rechercher une ville ou une adresse",
+        placeholder: "Rechercher une ville ou une adresse",
 
-          showResultsWhileTyping: true,
-          marker: false,
+        showResultsWhileTyping: true,
+        marker: false,
 
-          flyTo: {
-            duration: 2000,
-            zoom: 14,
-          },
-        }
-      );
+        flyTo: {
+          duration: 2000,
+          zoom: 14,
+        },
+      });
 
       map.addControl(geocoder, "top-left");
 
@@ -202,15 +184,7 @@ export function useMap({
         paint: {
           "circle-color": MAP_COLORS.cluster,
 
-          "circle-radius": [
-            "step",
-            ["get", "point_count"],
-            18,
-            10,
-            23,
-            50,
-            30,
-          ],
+          "circle-radius": ["step", ["get", "point_count"], 18, 10, 23, 50, 30],
 
           "circle-stroke-width": 3,
           "circle-stroke-color": MAP_COLORS.white,
@@ -226,8 +200,7 @@ export function useMap({
         filter: ["has", "point_count"],
 
         layout: {
-          "text-field":
-            "{point_count_abbreviated}",
+          "text-field": "{point_count_abbreviated}",
           "text-size": 13,
         },
 
@@ -247,47 +220,23 @@ export function useMap({
           "circle-color": [
             "case",
 
-            [
-              "==",
-              ["get", "moderation_status"],
-              "pending",
-            ],
+            ["==", ["get", "moderation_status"], "pending"],
             MAP_COLORS.pending,
 
-            [
-              "==",
-              ["get", "moderation_status"],
-              "review",
-            ],
+            ["==", ["get", "moderation_status"], "review"],
             MAP_COLORS.review,
 
             [
               "all",
-              [
-                "==",
-                ["get", "moderation_status"],
-                "approved",
-              ],
-              [
-                "==",
-                ["get", "status"],
-                "present",
-              ],
+              ["==", ["get", "moderation_status"], "approved"],
+              ["==", ["get", "status"], "present"],
             ],
             MAP_COLORS.present,
 
             [
               "all",
-              [
-                "==",
-                ["get", "moderation_status"],
-                "approved",
-              ],
-              [
-                "==",
-                ["get", "status"],
-                "missing",
-              ],
+              ["==", ["get", "moderation_status"], "approved"],
+              ["==", ["get", "status"], "missing"],
             ],
             MAP_COLORS.missing,
 
@@ -301,166 +250,102 @@ export function useMap({
       });
     });
 
-    map.on(
-        "click",
-        "stick-points",
-        (event) => {
-            if (addModeRef.current) {
-            return;
-            }
+    map.on("click", "stick-points", (event) => {
+      if (addModeRef.current) {
+        return;
+      }
 
-            const feature =
-            event.features?.[0];
+      const feature = event.features?.[0];
 
-            if (!feature) {
-            return;
-            }
+      if (!feature) {
+        return;
+      }
 
-            const stickId =
-            feature.properties?.id;
+      const stickId = feature.properties?.id;
 
-            if (!stickId) {
-            return;
-            }
+      if (!stickId) {
+        return;
+      }
 
-            const stick =
-            sticksRef.current.find(
-                (item) =>
-                item.id === stickId
-            );
+      const stick = sticksRef.current.find((item) => item.id === stickId);
 
-            if (!stick) {
-            return;
-            }
+      if (!stick) {
+        return;
+      }
 
-            onStickClickRef.current(stick);
+      onStickClickRef.current(stick);
 
-            const isMobile =
-            window.innerWidth <= 700;
+      const isMobile = window.innerWidth <= 700;
 
-            map.easeTo({
-            center: [
-                stick.longitude,
-                stick.latitude,
-            ],
+      map.easeTo({
+        center: [stick.longitude, stick.latitude],
 
-            zoom: Math.max(
-                map.getZoom(),
-                18
-            ),
+        zoom: Math.max(map.getZoom(), 18),
 
-            offset: isMobile
-                ? [0, -140]
-                : [-180, 0],
+        offset: isMobile ? [0, -140] : [-180, 0],
 
-            duration: 2000,
-            });
-        }
-    );
-    map.on(
-        "click",
-        "stick-clusters",
-        async (event) => {
-            if (addModeRef.current) {
-            return;
-            }
+        duration: 2000,
+      });
+    });
+    map.on("click", "stick-clusters", async (event) => {
+      if (addModeRef.current) {
+        return;
+      }
 
-            const features =
-            map.queryRenderedFeatures(
-                event.point,
-                {
-                layers: [
-                    "stick-clusters",
-                ],
-                }
-            );
+      const features = map.queryRenderedFeatures(event.point, {
+        layers: ["stick-clusters"],
+      });
 
-            const feature = features[0];
+      const feature = features[0];
 
-            if (!feature) {
-            return;
-            }
+      if (!feature) {
+        return;
+      }
 
-            const clusterId =
-            feature.properties?.cluster_id;
+      const clusterId = feature.properties?.cluster_id;
 
-            if (clusterId === undefined) {
-            return;
-            }
+      if (clusterId === undefined) {
+        return;
+      }
 
-            const source =
-            map.getSource(
-                "sticks"
-            ) as GeoJSONSource;
+      const source = map.getSource("sticks") as GeoJSONSource;
 
-            const zoom =
-            await source.getClusterExpansionZoom(
-                clusterId
-            );
+      const zoom = await source.getClusterExpansionZoom(clusterId);
 
-            if (
-            feature.geometry.type !==
-            "Point"
-            ) {
-            return;
-            }
+      if (feature.geometry.type !== "Point") {
+        return;
+      }
 
-            map.easeTo({
-            center:
-                feature.geometry
-                .coordinates as [
-                number,
-                number
-                ],
+      map.easeTo({
+        center: feature.geometry.coordinates as [number, number],
 
-            zoom,
-            duration: 350,
-            });
-        }
-    );
-    map.on(
-        "mouseenter",
-        "stick-points",
-        () => {
-            map.getCanvas().style.cursor =
-            "pointer";
-        }
-    );
+        zoom,
+        duration: 350,
+      });
+    });
+    map.on("mouseenter", "stick-points", () => {
+      map.getCanvas().style.cursor = "pointer";
+    });
 
-    map.on(
-        "mouseleave",
-        "stick-points",
-        () => {
-            map.getCanvas().style.cursor =
-            "";
-        }
-    );
+    map.on("mouseleave", "stick-points", () => {
+      map.getCanvas().style.cursor = "";
+    });
 
-    map.on(
-        "mouseenter",
-        "stick-clusters",
-        () => {
-            map.getCanvas().style.cursor =
-            "pointer";
-        }
-    );
+    map.on("mouseenter", "stick-clusters", () => {
+      map.getCanvas().style.cursor = "pointer";
+    });
 
-    map.on(
-        "mouseleave",
-        "stick-clusters",
-        () => {
-            map.getCanvas().style.cursor =
-            "";
-        }
-    );
+    map.on("mouseleave", "stick-clusters", () => {
+      map.getCanvas().style.cursor = "";
+    });
 
     map.touchZoomRotate.disableRotation();
 
     return () => {
-        clearAddMarker();
+      clearAddMarker();
 
-        map.remove();
-        mapRef.current = null;
+      map.remove();
+      mapRef.current = null;
     };
   }, [mapContainer]);
 
@@ -468,56 +353,36 @@ export function useMap({
     const map = mapRef.current;
 
     if (!map) {
-        return;
+      return;
     }
 
     if (!addMode) {
-        map.dragPan.enable();
-        map.getCanvas().style.cursor = "";
-        return;
+      map.dragPan.enable();
+      map.getCanvas().style.cursor = "";
+      return;
     }
 
     map.dragPan.disable();
     map.getCanvas().style.cursor = "crosshair";
 
-    const handleClick = (
-        event: MapMouseEvent
-    ) => {
-        const {
-        lng,
-        lat,
-        } = event.lngLat;
+    const handleClick = (event: MapMouseEvent) => {
+      const { lng, lat } = event.lngLat;
 
-        if (markerRef.current) {
-        markerRef.current.setLngLat([
-            lng,
-            lat,
-        ]);
-        } else {
-        markerRef.current =
-            new Marker()
-            .setLngLat([lng, lat])
-            .addTo(map);
-        }
+      if (markerRef.current) {
+        markerRef.current.setLngLat([lng, lat]);
+      } else {
+        markerRef.current = new Marker().setLngLat([lng, lat]).addTo(map);
+      }
 
-        onAddLocationRef.current(
-            lng,
-            lat
-        );
+      onAddLocationRef.current(lng, lat);
     };
 
-    map.once(
-        "click",
-        handleClick
-    );
+    map.once("click", handleClick);
 
     return () => {
-        map.off(
-        "click",
-        handleClick
-        );
+      map.off("click", handleClick);
     };
-    }, [addMode]);
+  }, [addMode]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -527,20 +392,13 @@ export function useMap({
     }
 
     const updateSource = () => {
-      const source = map.getSource("sticks") as
-        | GeoJSONSource
-        | undefined;
+      const source = map.getSource("sticks") as GeoJSONSource | undefined;
 
       if (!source) {
         return;
       }
 
-      source.setData(
-        sticksToGeoJSON(
-          sticks,
-          stickStatuses
-        )
-      );
+      source.setData(sticksToGeoJSON(sticks, stickStatuses));
     };
 
     if (map.isStyleLoaded()) {

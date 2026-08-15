@@ -1,15 +1,11 @@
 import { supabase } from "../supabase";
 import type { Friendship } from "../types";
 
-export async function getMyFriendships(
-  userId: string
-): Promise<Friendship[]> {
+export async function getMyFriendships(userId: string): Promise<Friendship[]> {
   const { data, error } = await supabase
     .from("friendships")
     .select("*")
-    .or(
-      `requester_id.eq.${userId},addressee_id.eq.${userId}`
-    );
+    .or(`requester_id.eq.${userId},addressee_id.eq.${userId}`);
 
   if (error) {
     throw error;
@@ -20,13 +16,13 @@ export async function getMyFriendships(
 
 export async function getFriendshipBetween(
   userId: string,
-  otherUserId: string
+  otherUserId: string,
 ): Promise<Friendship | null> {
   const { data, error } = await supabase
     .from("friendships")
     .select("*")
     .or(
-      `and(requester_id.eq.${userId},addressee_id.eq.${otherUserId}),and(requester_id.eq.${otherUserId},addressee_id.eq.${userId})`
+      `and(requester_id.eq.${userId},addressee_id.eq.${otherUserId}),and(requester_id.eq.${otherUserId},addressee_id.eq.${userId})`,
     )
     .maybeSingle();
 
@@ -37,15 +33,10 @@ export async function getFriendshipBetween(
   return data;
 }
 
-export async function findUserByEmail(
-  email: string
-) {
-  const { data, error } = await supabase.rpc(
-    "find_user_by_email",
-    {
-      search_email: email,
-    }
-  );
+export async function findUserByEmail(email: string) {
+  const { data, error } = await supabase.rpc("find_user_by_email", {
+    search_email: email,
+  });
 
   if (error) {
     throw error;
@@ -56,7 +47,7 @@ export async function findUserByEmail(
 
 export async function sendFriendRequest(
   requesterId: string,
-  addresseeId: string
+  addresseeId: string,
 ): Promise<Friendship> {
   const { data, error } = await supabase
     .from("friendships")
@@ -77,7 +68,7 @@ export async function sendFriendRequest(
 
 export async function updateFriendshipStatus(
   friendshipId: string,
-  status: "accepted" | "rejected"
+  status: "accepted" | "rejected",
 ): Promise<void> {
   const { error } = await supabase
     .from("friendships")

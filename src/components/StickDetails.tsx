@@ -1,28 +1,21 @@
-import type {
-    Stick,
-    Profile,
-    StickConfirmation,
-    StickReport,
-} from "../types";
+import type { Stick, Profile, StickConfirmation, StickReport } from "../types";
 
 type StickDetailsProps = {
-    stick: Stick;
-    author: Profile | null;
-    confirmations: StickConfirmation[];
-    reports: StickReport[];
-    photoUrl: string | null;
+  stick: Stick;
+  author: Profile | null;
+  confirmations: StickConfirmation[];
+  reports: StickReport[];
+  photoUrl: string | null;
 
-    currentUserId: string | null;
+  currentUserId: string | null;
 
-    onClose: () => void;
-    onConfirm: () => void;
-    onReportMissing: () => void;
+  onClose: () => void;
+  onConfirm: () => void;
+  onReportMissing: () => void;
 
-    isAdmin: boolean;
-    onDelete: () => void;
-    onOpenAuthor?: (
-      userId: string
-    ) => void;
+  isAdmin: boolean;
+  onDelete: () => void;
+  onOpenAuthor?: (userId: string) => void;
 };
 
 export default function StickDetails({
@@ -38,11 +31,8 @@ export default function StickDetails({
   isAdmin,
   onDelete,
   onOpenAuthor,
-
 }: StickDetailsProps) {
-  const isOwner =
-    currentUserId !== null &&
-    stick.user_id === currentUserId;
+  const isOwner = currentUserId !== null && stick.user_id === currentUserId;
 
   function getStickStatus() {
     const latestConfirmation = confirmations[0];
@@ -60,27 +50,18 @@ export default function StickDetails({
       return "missing";
     }
 
-    const confirmationDate = new Date(
-      latestConfirmation.updated_at
-    ).getTime();
+    const confirmationDate = new Date(latestConfirmation.updated_at).getTime();
 
-    const reportDate = new Date(
-      latestReport.updated_at
-    ).getTime();
+    const reportDate = new Date(latestReport.updated_at).getTime();
 
-    return confirmationDate > reportDate
-      ? "present"
-      : "missing";
+    return confirmationDate > reportDate ? "present" : "missing";
   }
 
   const status = getStickStatus();
 
   return (
     <aside className="stick-details">
-      <button
-        className="close-stick-details"
-        onClick={onClose}
-      >
+      <button className="close-stick-details" onClick={onClose}>
         ✕
       </button>
 
@@ -91,9 +72,7 @@ export default function StickDetails({
         {author ? (
           <button
             className="stick-author-button"
-            onClick={() =>
-              onOpenAuthor?.(author.id)
-            }
+            onClick={() => onOpenAuthor?.(author.id)}
           >
             {author.username}
           </button>
@@ -102,29 +81,18 @@ export default function StickDetails({
         )}
       </p>
 
-      {photoUrl && (
-        <img
-          src={photoUrl}
-          alt="Stick"
-          className="stick-photo"
-        />
-      )}
+      {photoUrl && <img src={photoUrl} alt="Stick" className="stick-photo" />}
 
-      <p>
-        {stick.description || "Aucune description"}
-      </p>
+      <p>{stick.description || "Aucune description"}</p>
 
       <p className="stick-coordinates">
-        📍 {stick.latitude.toFixed(5)},{" "}
-        {stick.longitude.toFixed(5)}
+        📍 {stick.latitude.toFixed(5)}, {stick.longitude.toFixed(5)}
       </p>
       {stick.moderation_status === "pending" && (
         <div className="moderation-status moderation-pending">
           <strong>🟠 En attente de validation</strong>
 
-          <span>
-            Ce stick n'est pas encore visible publiquement.
-          </span>
+          <span>Ce stick n'est pas encore visible publiquement.</span>
         </div>
       )}
 
@@ -132,75 +100,59 @@ export default function StickDetails({
         <div className="moderation-status moderation-review">
           <strong>🟣 En cours de vérification</strong>
 
-          <span>
-            Ce stick doit être examiné par un modérateur.
-          </span>
+          <span>Ce stick doit être examiné par un modérateur.</span>
         </div>
       )}
       {stick.moderation_status === "approved" && (
         <div className="stick-status">
           {status === "present" && (
-          <>
-            <strong>🟢 Présent</strong>
+            <>
+              <strong>🟢 Présent</strong>
 
-            <span>
-              Confirmé le{" "}
-              {new Date(
-                confirmations[0].updated_at
-              ).toLocaleDateString("fr-FR")}
-            </span>
-          </>
-        )}
+              <span>
+                Confirmé le{" "}
+                {new Date(confirmations[0].updated_at).toLocaleDateString(
+                  "fr-FR",
+                )}
+              </span>
+            </>
+          )}
 
-        {status === "missing" && (
-          <>
-            <strong>🔴 Signalé disparu</strong>
+          {status === "missing" && (
+            <>
+              <strong>🔴 Signalé disparu</strong>
 
-            <span>
-              Signalé le{" "}
-              {new Date(
-                reports[0].updated_at
-              ).toLocaleDateString("fr-FR")}
-            </span>
-          </>
-        )}
+              <span>
+                Signalé le{" "}
+                {new Date(reports[0].updated_at).toLocaleDateString("fr-FR")}
+              </span>
+            </>
+          )}
 
-        {status === "unknown" && (
-          <>
-            <strong>⚪ Non vérifié</strong>
-            <span>Aucune information récente</span>
-          </>
-        )}
+          {status === "unknown" && (
+            <>
+              <strong>⚪ Non vérifié</strong>
+              <span>Aucune information récente</span>
+            </>
+          )}
         </div>
       )}
       {currentUserId && (
-      <div className="stick-actions">
-        <button
-          onClick={onConfirm}
-          disabled={isOwner}
-        >
-          {isOwner
-            ? " Tu ne peux valider ton stick."
-            : "✅ Je l'ai vu !"}
-        </button>
+        <div className="stick-actions">
+          <button onClick={onConfirm} disabled={isOwner}>
+            {isOwner ? " Tu ne peux valider ton stick." : "✅ Je l'ai vu !"}
+          </button>
 
-        <button
-          onClick={onReportMissing}
-          disabled={isOwner}
-        >
-          {isOwner
-            ? " Tu ne peux signaler ton stick."
-            : "🚩 Il a disparu"}
-        </button>
-      </div>
+          <button onClick={onReportMissing} disabled={isOwner}>
+            {isOwner ? " Tu ne peux signaler ton stick." : "🚩 Il a disparu"}
+          </button>
+        </div>
       )}
       {isAdmin && (
         <div className="admin-actions">
-            <button onClick={onDelete}>
-            🗑 Supprimer le stick
-            </button>
+          <button onClick={onDelete}>🗑 Supprimer le stick</button>
         </div>
-    )}
+      )}
     </aside>
   );
 }

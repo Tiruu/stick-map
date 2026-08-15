@@ -12,11 +12,7 @@ export type Stick = {
   user_id: string | null;
   created_at: string;
 
-  moderation_status:
-    | "pending"
-    | "approved"
-    | "review"
-    | "rejected";
+  moderation_status: "pending" | "approved" | "review" | "rejected";
 };
 
 export type Profile = {
@@ -48,15 +44,9 @@ export type StickReport = {
   updated_at: string;
 };
 
-export type StickStatus =
-  | "present"
-  | "missing"
-  | "unknown";
+export type StickStatus = "present" | "missing" | "unknown";
 
-export type FriendshipStatus =
-  | "pending"
-  | "accepted"
-  | "rejected";
+export type FriendshipStatus = "pending" | "accepted" | "rejected";
 
 export type Friendship = {
   id: string;

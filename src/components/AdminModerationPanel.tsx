@@ -29,10 +29,7 @@ export default function AdminModerationPanel({
     return (
       <div className="admin-moderation-overlay">
         <div className="admin-moderation-panel">
-          <button
-            className="close-admin-moderation"
-            onClick={onClose}
-          >
+          <button className="close-admin-moderation" onClick={onClose}>
             ✕
           </button>
 
@@ -46,10 +43,7 @@ export default function AdminModerationPanel({
   return (
     <div className="admin-moderation-overlay">
       <div className="admin-moderation-panel">
-        <button
-          className="close-admin-moderation"
-          onClick={onClose}
-        >
+        <button className="close-admin-moderation" onClick={onClose}>
           ✕
         </button>
 
@@ -67,37 +61,25 @@ export default function AdminModerationPanel({
           />
         )}
 
-        <p>
-          {stick.description || "Aucune description"}
-        </p>
+        <p>{stick.description || "Aucune description"}</p>
 
         <p className="stick-coordinates">
-          📍 {stick.latitude.toFixed(5)},{" "}
-          {stick.longitude.toFixed(5)}
+          📍 {stick.latitude.toFixed(5)}, {stick.longitude.toFixed(5)}
         </p>
 
         <div className="admin-moderation-actions">
-          <button
-            className="admin-reject"
-            onClick={() => onReject(stick)}
-          >
+          <button className="admin-reject" onClick={() => onReject(stick)}>
             ❌ Refuser
           </button>
 
-          <button
-            className="admin-approve"
-            onClick={() => onApprove(stick)}
-          >
+          <button className="admin-approve" onClick={() => onApprove(stick)}>
             ✅ Valider définitivement
           </button>
         </div>
 
         {sticks.length > 1 && (
           <div className="admin-moderation-navigation">
-            <button
-              onClick={onPrevious}
-              disabled={currentIndex === 0}
-            >
+            <button onClick={onPrevious} disabled={currentIndex === 0}>
               ← Précédent
             </button>
 

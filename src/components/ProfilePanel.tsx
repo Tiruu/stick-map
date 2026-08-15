@@ -1,16 +1,8 @@
 import { useEffect, useState } from "react";
 
-import type {
-  Profile,
-  Stick,
-  RankingEntry,
-  Friendship,
-} from "../types";
+import type { Profile, Stick, RankingEntry, Friendship } from "../types";
 
-import {
-  getProfile,
-  updateUsername,
-} from "../services/profiles";
+import { getProfile, updateUsername } from "../services/profiles";
 
 type ProfilePanelProps = {
   profile: Profile;
@@ -40,36 +32,26 @@ export default function ProfilePanel({
   onRejectFriend,
   onOpenFriends,
 }: ProfilePanelProps) {
-  const [editingUsername, setEditingUsername] =
-    useState(false);
+  const [editingUsername, setEditingUsername] = useState(false);
 
-  const [username, setUsername] = useState(
-    profile.username
-  );
+  const [username, setUsername] = useState(profile.username);
 
-  const [savingUsername, setSavingUsername] =
-    useState(false);
+  const [savingUsername, setSavingUsername] = useState(false);
 
-  const [usernameError, setUsernameError] =
-    useState("");
+  const [usernameError, setUsernameError] = useState("");
 
-  const [requesterProfiles, setRequesterProfiles] =
-    useState<Record<string, Profile>>({});
+  const [requesterProfiles, setRequesterProfiles] = useState<
+    Record<string, Profile>
+  >({});
 
   const incomingRequests = friendships.filter(
     (friendship) =>
-      friendship.addressee_id === profile.id &&
-      friendship.status === "pending"
+      friendship.addressee_id === profile.id && friendship.status === "pending",
   );
 
-  const rankIndex = ranking.findIndex(
-    (entry) => entry.user_id === profile.id
-  );
+  const rankIndex = ranking.findIndex((entry) => entry.user_id === profile.id);
 
-  const rank =
-    rankIndex >= 0
-      ? rankIndex + 1
-      : null;
+  const rank = rankIndex >= 0 ? rankIndex + 1 : null;
 
   useEffect(() => {
     let cancelled = false;
@@ -83,27 +65,17 @@ export default function ProfilePanel({
       try {
         const entries = await Promise.all(
           incomingRequests.map(async (request) => {
-            const requester = await getProfile(
-              request.requester_id
-            );
+            const requester = await getProfile(request.requester_id);
 
-            return [
-              request.requester_id,
-              requester,
-            ] as const;
-          })
+            return [request.requester_id, requester] as const;
+          }),
         );
 
         if (!cancelled) {
-          setRequesterProfiles(
-            Object.fromEntries(entries)
-          );
+          setRequesterProfiles(Object.fromEntries(entries));
         }
       } catch (error) {
-        console.error(
-          "Erreur chargement demandes d'amis :",
-          error
-        );
+        console.error("Erreur chargement demandes d'amis :", error);
       }
     }
 
@@ -118,16 +90,12 @@ export default function ProfilePanel({
     const trimmedUsername = username.trim();
 
     if (trimmedUsername.length < 3) {
-      setUsernameError(
-        "Le pseudo doit contenir au moins 3 caractères."
-      );
+      setUsernameError("Le pseudo doit contenir au moins 3 caractères.");
       return;
     }
 
     if (trimmedUsername.length > 24) {
-      setUsernameError(
-        "Le pseudo ne peut pas dépasser 24 caractères."
-      );
+      setUsernameError("Le pseudo ne peut pas dépasser 24 caractères.");
       return;
     }
 
@@ -142,14 +110,9 @@ export default function ProfilePanel({
 
       onUsernameUpdated(trimmedUsername);
     } catch (error) {
-      console.error(
-        "Erreur modification pseudo :",
-        error
-      );
+      console.error("Erreur modification pseudo :", error);
 
-      setUsernameError(
-        "Impossible de modifier le pseudo."
-      );
+      setUsernameError("Impossible de modifier le pseudo.");
     } finally {
       setSavingUsername(false);
     }
@@ -182,42 +145,25 @@ export default function ProfilePanel({
 
             <div className="friend-request-list">
               {incomingRequests.map((request) => {
-                const requester =
-                  requesterProfiles[
-                    request.requester_id
-                  ];
+                const requester = requesterProfiles[request.requester_id];
 
                 return (
-                  <div
-                    key={request.id}
-                    className="friend-request"
-                  >
+                  <div key={request.id} className="friend-request">
                     <span>
-                      <strong>
-                        {requester?.username ??
-                          "Utilisateur"}
-                      </strong>{" "}
+                      <strong>{requester?.username ?? "Utilisateur"}</strong>{" "}
                       souhaite vous ajouter en ami.
                     </span>
 
                     <div className="friend-request-actions">
                       <button
-                        onClick={() =>
-                          onAcceptFriend(
-                            request.id
-                          )
-                        }
+                        onClick={() => onAcceptFriend(request.id)}
                         aria-label="Accepter la demande"
                       >
                         ✅
                       </button>
 
                       <button
-                        onClick={() =>
-                          onRejectFriend(
-                            request.id
-                          )
-                        }
+                        onClick={() => onRejectFriend(request.id)}
                         aria-label="Refuser la demande"
                       >
                         ❌
@@ -238,13 +184,7 @@ export default function ProfilePanel({
           <div className="profile-username">
             <h2>👤 {profile.username}</h2>
 
-            <button
-              onClick={() =>
-                setEditingUsername(true)
-              }
-            >
-              Modifier
-            </button>
+            <button onClick={() => setEditingUsername(true)}>Modifier</button>
           </div>
         ) : (
           <div className="username-editor">
@@ -253,9 +193,7 @@ export default function ProfilePanel({
               value={username}
               maxLength={24}
               autoFocus
-              onChange={(event) =>
-                setUsername(event.target.value)
-              }
+              onChange={(event) => setUsername(event.target.value)}
               onKeyDown={(event) => {
                 if (event.key === "Enter") {
                   saveUsername();
@@ -268,28 +206,16 @@ export default function ProfilePanel({
             />
 
             <div className="username-editor-actions">
-              <button
-                onClick={cancelUsernameEdit}
-                disabled={savingUsername}
-              >
+              <button onClick={cancelUsernameEdit} disabled={savingUsername}>
                 Annuler
               </button>
 
-              <button
-                onClick={saveUsername}
-                disabled={savingUsername}
-              >
-                {savingUsername
-                  ? "Enregistrement..."
-                  : "Enregistrer"}
+              <button onClick={saveUsername} disabled={savingUsername}>
+                {savingUsername ? "Enregistrement..." : "Enregistrer"}
               </button>
             </div>
 
-            {usernameError && (
-              <p className="username-error">
-                {usernameError}
-              </p>
-            )}
+            {usernameError && <p className="username-error">{usernameError}</p>}
           </div>
         )}
 
@@ -304,17 +230,12 @@ export default function ProfilePanel({
           </div>
 
           <div>
-            <strong>
-              {rank ? `#${rank}` : "—"}
-            </strong>
+            <strong>{rank ? `#${rank}` : "—"}</strong>
             <span>classement</span>
           </div>
         </div>
 
-        <button
-          className="friends-button"
-          onClick={onOpenFriends}
-        >
+        <button className="friends-button" onClick={onOpenFriends}>
           👥 Mes amis
         </button>
 
@@ -326,30 +247,18 @@ export default function ProfilePanel({
 
         <div className="profile-stick-list">
           {sticks.length === 0 ? (
-            <p>
-              Aucun stick ajouté pour le moment.
-            </p>
+            <p>Aucun stick ajouté pour le moment.</p>
           ) : (
             sticks.map((stick) => (
               <button
                 key={stick.id}
                 className="profile-stick-entry"
-                onClick={() =>
-                  onSelectStick(stick)
-                }
+                onClick={() => onSelectStick(stick)}
               >
-                <span>
-                  📍{" "}
-                  {stick.description ||
-                    "Stick"}
-                </span>
+                <span>📍 {stick.description || "Stick"}</span>
 
                 <small>
-                  {new Date(
-                    stick.created_at
-                  ).toLocaleDateString(
-                    "fr-FR"
-                  )}
+                  {new Date(stick.created_at).toLocaleDateString("fr-FR")}
                 </small>
               </button>
             ))

@@ -1,7 +1,4 @@
-import type {
-  Profile,
-  Friendship,
-} from "../types";
+import type { Profile, Friendship } from "../types";
 
 type FriendsPanelProps = {
   friends: Profile[];
@@ -15,9 +12,7 @@ type FriendsPanelProps = {
   onAcceptFriend: (friendshipId: string) => void;
   onRejectFriend: (friendshipId: string) => void;
 
-  onSearch: (
-    email: string
-  ) => Promise<void>;
+  onSearch: (email: string) => Promise<void>;
 };
 
 export default function FriendsPanel({
@@ -33,19 +28,13 @@ export default function FriendsPanel({
   return (
     <div className="friends-overlay">
       <div className="friends-panel">
-        <button
-          className="close-friends"
-          onClick={onClose}
-          aria-label="Fermer"
-        >
+        <button className="close-friends" onClick={onClose} aria-label="Fermer">
           ✕
         </button>
 
         <h2>👥 Mes amis</h2>
 
-        <FriendSearch
-          onSearch={onSearch}
-        />
+        <FriendSearch onSearch={onSearch} />
 
         {pendingRequests.length > 0 && (
           <section className="friends-section">
@@ -53,42 +42,23 @@ export default function FriendsPanel({
 
             <div className="friend-request-list">
               {pendingRequests.map((request) => {
-                const requester =
-                  requesterProfiles[
-                    request.requester_id
-                  ];
+                const requester = requesterProfiles[request.requester_id];
 
                 return (
-                  <div
-                    key={request.id}
-                    className="friend-request"
-                  >
+                  <div key={request.id} className="friend-request">
                     <button
                       className="friend-name"
-                      onClick={() =>
-                        onSelectUser(
-                          request.requester_id
-                        )
-                      }
+                      onClick={() => onSelectUser(request.requester_id)}
                     >
-                      {requester?.username ??
-                        "Utilisateur"}
+                      {requester?.username ?? "Utilisateur"}
                     </button>
 
                     <div className="friend-request-actions">
-                      <button
-                        onClick={() =>
-                          onAcceptFriend(request.id)
-                        }
-                      >
+                      <button onClick={() => onAcceptFriend(request.id)}>
                         ✅
                       </button>
 
-                      <button
-                        onClick={() =>
-                          onRejectFriend(request.id)
-                        }
-                      >
+                      <button onClick={() => onRejectFriend(request.id)}>
                         ❌
                       </button>
                     </div>
@@ -100,23 +70,17 @@ export default function FriendsPanel({
         )}
 
         <section className="friends-section">
-          <h3>
-            Amis ({friends.length})
-          </h3>
+          <h3>Amis ({friends.length})</h3>
 
           {friends.length === 0 ? (
-            <p className="friends-empty">
-              Tu n'as pas encore d'amis.
-            </p>
+            <p className="friends-empty">Tu n'as pas encore d'amis.</p>
           ) : (
             <div className="friends-list">
               {friends.map((friend) => (
                 <button
                   key={friend.id}
                   className="friend-list-entry"
-                  onClick={() =>
-                    onSelectUser(friend.id)
-                  }
+                  onClick={() => onSelectUser(friend.id)}
                 >
                   👤 {friend.username}
                 </button>
@@ -130,14 +94,10 @@ export default function FriendsPanel({
 }
 
 type FriendSearchProps = {
-  onSearch: (
-    email: string
-  ) => Promise<void>;
+  onSearch: (email: string) => Promise<void>;
 };
 
-function FriendSearch({
-  onSearch,
-}: FriendSearchProps) {
+function FriendSearch({ onSearch }: FriendSearchProps) {
   return (
     <section className="friends-section">
       <h3>Ajouter un ami</h3>
@@ -147,16 +107,11 @@ function FriendSearch({
         onSubmit={async (event) => {
           event.preventDefault();
 
-          const form =
-            event.currentTarget;
+          const form = event.currentTarget;
 
-          const input =
-            form.elements.namedItem(
-              "email"
-            ) as HTMLInputElement;
+          const input = form.elements.namedItem("email") as HTMLInputElement;
 
-          const email =
-            input.value.trim();
+          const email = input.value.trim();
 
           if (!email) return;
 
@@ -172,9 +127,7 @@ function FriendSearch({
           autoComplete="off"
         />
 
-        <button type="submit">
-          Rechercher
-        </button>
+        <button type="submit">Rechercher</button>
       </form>
     </section>
   );

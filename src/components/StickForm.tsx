@@ -44,21 +44,18 @@ export default function StickForm({
       <h2>Ajouter un stick</h2>
 
       <p className="stick-coordinates">
-        📍 {draftStick.lat.toFixed(6)},{" "}
-        {draftStick.lng.toFixed(6)}
+        📍 {draftStick.lat.toFixed(6)}, {draftStick.lng.toFixed(6)}
       </p>
 
       {!photo && (
         <label className="photo-capture">
           📷 Prendre une photo
-
           <input
             type="file"
             accept="image/*"
             capture="environment"
             onChange={(event) => {
-              const file =
-                event.target.files?.[0] ?? null;
+              const file = event.target.files?.[0] ?? null;
 
               onPhotoChange(file);
             }}
@@ -68,21 +65,16 @@ export default function StickForm({
 
       {photo && previewUrl && (
         <div className="photo-preview">
-          <img
-            src={previewUrl}
-            alt="Aperçu du stick"
-          />
+          <img src={previewUrl} alt="Aperçu du stick" />
 
           <label className="change-photo-button">
             📷 Reprendre la photo
-
             <input
               type="file"
               accept="image/*"
               capture="environment"
               onChange={(event) => {
-                const file =
-                  event.target.files?.[0] ?? null;
+                const file = event.target.files?.[0] ?? null;
 
                 onPhotoChange(file);
               }}
@@ -91,31 +83,21 @@ export default function StickForm({
         </div>
       )}
 
-      <p className="photo-help">
-        Une photo prise sur place est obligatoire.
-      </p>
+      <p className="photo-help">Une photo prise sur place est obligatoire.</p>
 
       <label>
         Description
-
         <textarea
           value={description}
-          onChange={(event) =>
-            onDescriptionChange(event.target.value)
-          }
+          onChange={(event) => onDescriptionChange(event.target.value)}
           placeholder="Décris le stick..."
         />
       </label>
 
       <div className="form-buttons">
-        <button onClick={onCancel}>
-          Annuler
-        </button>
+        <button onClick={onCancel}>Annuler</button>
 
-        <button
-          onClick={onSave}
-          disabled={!photo}
-        >
+        <button onClick={onSave} disabled={!photo}>
           Ajouter
         </button>
       </div>

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState} from "react";
+import { useEffect, useRef, useState } from "react";
 import { setWorkerUrl } from "maplibre-gl";
 import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/react";
@@ -93,10 +93,7 @@ function App() {
     acceptFriend,
     rejectFriend,
   } = useFriends(user);
-  const {
-    ranking,
-    loadRanking,
-  } = useRanking();
+  const { ranking, loadRanking } = useRanking();
   const {
     publicProfile,
     publicProfileFriendship,
@@ -119,10 +116,7 @@ function App() {
       loadReports(stick.id);
     },
 
-    onAddLocation: (
-      longitude,
-      latitude
-    ) => {
+    onAddLocation: (longitude, latitude) => {
       setDraftStick({
         lng: longitude,
         lat: latitude,
@@ -141,33 +135,23 @@ function App() {
       setUserSticks(data);
       setShowProfile(true);
     } catch (error) {
-      console.error(
-        "Erreur chargement profil :",
-        error
-      );
+      console.error("Erreur chargement profil :", error);
     }
   }
 
-  async function handleFriendSearch(
-    email: string
-  ) {
+  async function handleFriendSearch(email: string) {
     if (!user) return;
 
     try {
-      const result =
-        await findUserByEmail(email);
+      const result = await findUserByEmail(email);
 
       if (!result) {
-        alert(
-          "Aucun utilisateur trouvé avec cet email."
-        );
+        alert("Aucun utilisateur trouvé avec cet email.");
         return;
       }
 
       if (result.id === user.id) {
-        alert(
-          "Tu ne peux pas t'ajouter toi-même."
-        );
+        alert("Tu ne peux pas t'ajouter toi-même.");
         return;
       }
 
@@ -175,10 +159,7 @@ function App() {
 
       setShowFriends(false);
     } catch (error) {
-      console.error(
-        "Erreur recherche utilisateur :",
-        error
-      );
+      console.error("Erreur recherche utilisateur :", error);
     }
   }
 
@@ -212,10 +193,7 @@ function App() {
 
         setUser(currentUser);
       } catch (error) {
-        console.error(
-          "Erreur initialisation authentification :",
-          error
-        );
+        console.error("Erreur initialisation authentification :", error);
       }
     }
 
@@ -223,11 +201,9 @@ function App() {
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
-        setUser(session?.user ?? null);
-      }
-    );
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+    });
 
     return () => {
       cancelled = true;
@@ -245,8 +221,7 @@ function App() {
       }
 
       try {
-        const profileData =
-          await getProfile(user.id);
+        const profileData = await getProfile(user.id);
 
         if (cancelled) {
           return;
@@ -254,10 +229,7 @@ function App() {
 
         setProfile(profileData);
       } catch (error) {
-        console.error(
-          "Erreur chargement données utilisateur :",
-          error
-        );
+        console.error("Erreur chargement données utilisateur :", error);
       }
     }
 
@@ -283,7 +255,7 @@ function App() {
 
     const deleted = await deleteStickById(
       selectedStick.id,
-      selectedStick.photo_path
+      selectedStick.photo_path,
     );
 
     if (!deleted) {
@@ -328,14 +300,11 @@ function App() {
 
   return (
     <>
-    {!user && (
-      <button
-        className="login-button"
-        onClick={() => setShowAuth(true)}
-      >
-        Se connecter
-      </button>
-    )}
+      {!user && (
+        <button className="login-button" onClick={() => setShowAuth(true)}>
+          Se connecter
+        </button>
+      )}
       {showAuth && !user && (
         <div className="auth-overlay">
           <Auth />
@@ -362,9 +331,7 @@ function App() {
           ranking={ranking}
           friendships={friendships}
 
-          onClose={() =>
-            setShowProfile(false)
-          }
+          onClose={() => setShowProfile(false)}
 
           onOpenFriends={() => {
             setShowProfile(false);
@@ -387,7 +354,7 @@ function App() {
                     ...current,
                     username,
                   }
-                : current
+                : current,
             );
 
             loadRanking();
@@ -403,15 +370,11 @@ function App() {
           currentUserId={user.id}
           friendship={publicProfileFriendship}
           stickCount={
-            ranking.find(
-              (entry) =>
-                entry.user_id === publicProfile.id
-            )?.stick_count ?? 0
+            ranking.find((entry) => entry.user_id === publicProfile.id)
+              ?.stick_count ?? 0
           }
           onClose={closePublicProfile}
-          onSendRequest={
-            handleSendFriendRequest
-          }
+          onSendRequest={handleSendFriendRequest}
         />
       )}
       {showFriends && user && (
@@ -419,9 +382,7 @@ function App() {
           friends={friendProfiles}
           pendingRequests={pendingFriendRequests}
           requesterProfiles={requesterProfiles}
-          onClose={() =>
-            setShowFriends(false)
-          }
+          onClose={() => setShowFriends(false)}
           onSelectUser={(userId) => {
             setShowFriends(false);
             openPublicProfile(userId);
@@ -449,36 +410,19 @@ function App() {
           currentIndex={validationIndex}
           getPhotoUrl={getStickPhotoUrl}
 
-          onClose={() =>
-            setShowValidation(false)
-          }
+          onClose={() => setShowValidation(false)}
 
-          onApprove={(stick) =>
-            handleValidationVote(
-              stick,
-              "approve"
-            )
-          }
+          onApprove={(stick) => handleValidationVote(stick, "approve")}
 
-          onReject={(stick) =>
-            handleValidationVote(
-              stick,
-              "reject"
-            )
-          }
+          onReject={(stick) => handleValidationVote(stick, "reject")}
 
           onPrevious={() =>
-            setValidationIndex((current) =>
-              Math.max(0, current - 1)
-            )
+            setValidationIndex((current) => Math.max(0, current - 1))
           }
 
           onNext={() =>
             setValidationIndex((current) =>
-              Math.min(
-                pendingSticks.length - 1,
-                current + 1
-              )
+              Math.min(pendingSticks.length - 1, current + 1),
             )
           }
         />
@@ -500,34 +444,24 @@ function App() {
           currentIndex={adminModerationIndex}
           getPhotoUrl={getStickPhotoUrl}
 
-          onClose={() =>
-            setShowAdminModeration(false)
-          }
+          onClose={() => setShowAdminModeration(false)}
 
           onApprove={handleAdminApproveStick}
           onReject={handleAdminRejectStick}
 
           onPrevious={() =>
-            setAdminModerationIndex((current) =>
-              Math.max(0, current - 1)
-            )
+            setAdminModerationIndex((current) => Math.max(0, current - 1))
           }
 
           onNext={() =>
             setAdminModerationIndex((current) =>
-              Math.min(
-                reviewSticks.length - 1,
-                current + 1
-              )
+              Math.min(reviewSticks.length - 1, current + 1),
             )
           }
         />
       )}
 
-      <button
-        className="ranking-button"
-        onClick={() => setShowRanking(true)}
-      >
+      <button className="ranking-button" onClick={() => setShowRanking(true)}>
         🏆 Classement
       </button>
 
@@ -541,10 +475,7 @@ function App() {
               ✕
             </button>
 
-            <Ranking
-              ranking={ranking}
-              onSelectUser={openPublicProfile}
-            />
+            <Ranking ranking={ranking} onSelectUser={openPublicProfile} />
           </div>
         </div>
       )}
@@ -577,12 +508,8 @@ function App() {
             setSelectedStick(null);
             setSelectedAuthor(null);
           }}
-          onConfirm={() =>
-            confirmStick(selectedStick.id)
-          }
-          onReportMissing={() =>
-            reportMissingStick(selectedStick.id)
-          }
+          onConfirm={() => confirmStick(selectedStick.id)}
+          onReportMissing={() => reportMissingStick(selectedStick.id)}
           isAdmin={isAdmin}
           onDelete={handleDeleteSelectedStick}
           onOpenAuthor={(userId) => {

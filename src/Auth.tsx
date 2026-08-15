@@ -48,16 +48,14 @@ export default function Auth() {
       }
 
       setMessage(
-        "Compte créé. Vérifie éventuellement ton email pour confirmer ton inscription."
+        "Compte créé. Vérifie éventuellement ton email pour confirmer ton inscription.",
       );
     }
   }
 
   return (
     <div className="auth-panel">
-      <h2>
-        {isLogin ? "Connexion" : "Créer un compte"}
-      </h2>
+      <h2>{isLogin ? "Connexion" : "Créer un compte"}</h2>
 
       {!isLogin && (
         <input
@@ -92,22 +90,12 @@ export default function Auth() {
         }}
       />
 
-      <button
-        onClick={handleSubmit}
-        disabled={!captchaToken}
-      >
-        {isLogin
-          ? "Se connecter"
-          : "Créer mon compte"}
+      <button onClick={handleSubmit} disabled={!captchaToken}>
+        {isLogin ? "Se connecter" : "Créer mon compte"}
       </button>
 
-      <button
-        type="button"
-        onClick={() => setIsLogin(!isLogin)}
-      >
-        {isLogin
-          ? "Je n'ai pas encore de compte"
-          : "J'ai déjà un compte"}
+      <button type="button" onClick={() => setIsLogin(!isLogin)}>
+        {isLogin ? "Je n'ai pas encore de compte" : "J'ai déjà un compte"}
       </button>
 
       {message && <p>{message}</p>}

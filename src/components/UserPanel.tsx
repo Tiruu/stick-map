@@ -13,16 +13,10 @@ export default function UserPanel({
 }: UserPanelProps) {
   return (
     <div className="user-panel">
-      <span>
-        👤 {profile?.username ?? "Chargement..."}
-      </span>
-      <button onClick={onOpenProfile}>
-        Profil
-      </button>
+      <span>👤 {profile?.username ?? "Chargement..."}</span>
+      <button onClick={onOpenProfile}>Profil</button>
 
-      <button onClick={onLogout}>
-        Déconnexion
-      </button>
+      <button onClick={onLogout}>Déconnexion</button>
     </div>
   );
 }

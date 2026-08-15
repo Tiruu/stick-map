@@ -29,10 +29,7 @@ export default function ValidationPanel({
     return (
       <div className="validation-overlay">
         <div className="validation-panel">
-          <button
-            className="close-validation"
-            onClick={onClose}
-          >
+          <button className="close-validation" onClick={onClose}>
             ✕
           </button>
 
@@ -47,10 +44,7 @@ export default function ValidationPanel({
   return (
     <div className="validation-overlay">
       <div className="validation-panel">
-        <button
-          className="close-validation"
-          onClick={onClose}
-        >
+        <button className="close-validation" onClick={onClose}>
           ✕
         </button>
 
@@ -68,20 +62,14 @@ export default function ValidationPanel({
           />
         )}
 
-        <p>
-          {stick.description || "Aucune description"}
-        </p>
+        <p>{stick.description || "Aucune description"}</p>
 
         <p className="stick-coordinates">
-          📍 {stick.latitude.toFixed(5)},{" "}
-          {stick.longitude.toFixed(5)}
+          📍 {stick.latitude.toFixed(5)}, {stick.longitude.toFixed(5)}
         </p>
 
         <div className="validation-actions">
-          <button
-            className="validation-reject"
-            onClick={() => onReject(stick)}
-          >
+          <button className="validation-reject" onClick={() => onReject(stick)}>
             ❌ Je doute
           </button>
 
@@ -95,10 +83,7 @@ export default function ValidationPanel({
 
         {sticks.length > 1 && (
           <div className="validation-navigation">
-            <button
-              onClick={onPrevious}
-              disabled={currentIndex === 0}
-            >
+            <button onClick={onPrevious} disabled={currentIndex === 0}>
               ← Précédent
             </button>
 

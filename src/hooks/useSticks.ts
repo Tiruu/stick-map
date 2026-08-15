@@ -1,8 +1,4 @@
-import {
-  useCallback,
-  useEffect,
-  useState,
-} from "react";
+import { useCallback, useEffect, useState } from "react";
 
 import type {
   Stick,
@@ -22,9 +18,7 @@ import {
   deleteStick,
 } from "../services/sticks";
 
-import {
-  uploadStickPhoto,
-} from "../services/storage";
+import { uploadStickPhoto } from "../services/storage";
 
 type UserLike = {
   id: string;
@@ -42,132 +36,84 @@ type UseSticksOptions = {
   isAdmin: boolean;
 };
 
-export function useSticks({
-  user,
-  isAdmin,
-}: UseSticksOptions) {
-  const [sticks, setSticks] =
-    useState<Stick[]>([]);
+export function useSticks({ user, isAdmin }: UseSticksOptions) {
+  const [sticks, setSticks] = useState<Stick[]>([]);
 
-  const [stickStatuses, setStickStatuses] =
-    useState<Record<string, StickStatus>>({});
+  const [stickStatuses, setStickStatuses] = useState<
+    Record<string, StickStatus>
+  >({});
 
-  const [confirmations, setConfirmations] =
-    useState<StickConfirmation[]>([]);
+  const [confirmations, setConfirmations] = useState<StickConfirmation[]>([]);
 
-  const [reports, setReports] =
-    useState<StickReport[]>([]);
+  const [reports, setReports] = useState<StickReport[]>([]);
 
-  const loadSticks = useCallback(
-    async () => {
-      try {
-        const data = await getSticks(
-          user?.id ?? null,
-          isAdmin
-        );
+  const loadSticks = useCallback(async () => {
+    try {
+      const data = await getSticks(user?.id ?? null, isAdmin);
 
-        setSticks(data);
-      } catch (error) {
-        console.error(
-          "Erreur chargement sticks :",
-          error
-        );
-      }
-    },
-    [user, isAdmin]
-  );
+      setSticks(data);
+    } catch (error) {
+      console.error("Erreur chargement sticks :", error);
+    }
+  }, [user, isAdmin]);
 
-  const loadStickStatuses = useCallback(
-    async () => {
-      try {
-        const data =
-          await getStickStatuses();
+  const loadStickStatuses = useCallback(async () => {
+    try {
+      const data = await getStickStatuses();
 
-        setStickStatuses(data);
-      } catch (error) {
-        console.error(
-          "Erreur chargement statuts :",
-          error
-        );
-      }
-    },
-    []
-  );
+      setStickStatuses(data);
+    } catch (error) {
+      console.error("Erreur chargement statuts :", error);
+    }
+  }, []);
 
-  const loadConfirmations = useCallback(
-    async (stickId: string) => {
-      try {
-        const data =
-          await getConfirmations(stickId);
+  const loadConfirmations = useCallback(async (stickId: string) => {
+    try {
+      const data = await getConfirmations(stickId);
 
-        setConfirmations(data);
-      } catch (error) {
-        console.error(
-          "Erreur chargement confirmations :",
-          error
-        );
-      }
-    },
-    []
-  );
+      setConfirmations(data);
+    } catch (error) {
+      console.error("Erreur chargement confirmations :", error);
+    }
+  }, []);
 
-  const loadReports = useCallback(
-    async (stickId: string) => {
-      try {
-        const data =
-          await getReports(stickId);
+  const loadReports = useCallback(async (stickId: string) => {
+    try {
+      const data = await getReports(stickId);
 
-        setReports(data);
-      } catch (error) {
-        console.error(
-          "Erreur chargement signalements :",
-          error
-        );
-      }
-    },
-    []
-  );
+      setReports(data);
+    } catch (error) {
+      console.error("Erreur chargement signalements :", error);
+    }
+  }, []);
 
   const saveStick = useCallback(
-    async ({
-      latitude,
-      longitude,
-      description,
-      photo,
-    }: SaveStickParams) => {
+    async ({ latitude, longitude, description, photo }: SaveStickParams) => {
       if (!user) {
         return null;
       }
 
       try {
-        const photoPath =
-          await uploadStickPhoto(photo);
+        const photoPath = await uploadStickPhoto(photo);
 
-        const newStick =
-          await createStick({
-            latitude,
-            longitude,
-            description,
-            photoPath,
-            userId: user.id,
-          });
+        const newStick = await createStick({
+          latitude,
+          longitude,
+          description,
+          photoPath,
+          userId: user.id,
+        });
 
-        setSticks((current) => [
-          ...current,
-          newStick,
-        ]);
+        setSticks((current) => [...current, newStick]);
 
         return newStick;
       } catch (error) {
-        console.error(
-          "Erreur sauvegarde stick :",
-          error
-        );
+        console.error("Erreur sauvegarde stick :", error);
 
         return null;
       }
     },
-    [user]
+    [user],
   );
 
   const confirmStick = useCallback(
@@ -175,96 +121,60 @@ export function useSticks({
       if (!user) return;
 
       try {
-        await confirmStickPresence(
-          stickId,
-          user.id
-        );
+        await confirmStickPresence(stickId, user.id);
 
         await loadConfirmations(stickId);
         await loadStickStatuses();
       } catch (error) {
-        console.error(
-          "Erreur confirmation :",
-          error
-        );
+        console.error("Erreur confirmation :", error);
       }
     },
-    [
-      user,
-      loadConfirmations,
-      loadStickStatuses,
-    ]
+    [user, loadConfirmations, loadStickStatuses],
   );
 
-  const reportMissingStick =
-    useCallback(
-      async (stickId: string) => {
-        if (!user) return;
+  const reportMissingStick = useCallback(
+    async (stickId: string) => {
+      if (!user) return;
 
-        try {
-          await reportStickMissing(
-            stickId,
-            user.id
-          );
+      try {
+        await reportStickMissing(stickId, user.id);
 
-          await loadReports(stickId);
-          await loadStickStatuses();
-        } catch (error) {
-          console.error(
-            "Erreur signalement :",
-            error
-          );
-        }
-      },
-      [
-        user,
-        loadReports,
-        loadStickStatuses,
-      ]
-    );
+        await loadReports(stickId);
+        await loadStickStatuses();
+      } catch (error) {
+        console.error("Erreur signalement :", error);
+      }
+    },
+    [user, loadReports, loadStickStatuses],
+  );
 
-  const deleteStickById =
-    useCallback(
-      async (
-        stickId: string,
-        photoPath: string | null
-      ) => {
-        if (!isAdmin) {
-          return false;
-        }
+  const deleteStickById = useCallback(
+    async (stickId: string, photoPath: string | null) => {
+      if (!isAdmin) {
+        return false;
+      }
 
-        try {
-          await deleteStick(
-            stickId,
-            photoPath
-          );
+      try {
+        await deleteStick(stickId, photoPath);
 
-          setSticks((current) =>
-            current.filter(
-              (stick) =>
-                stick.id !== stickId
-            )
-          );
+        setSticks((current) => current.filter((stick) => stick.id !== stickId));
 
-          await loadStickStatuses();
+        await loadStickStatuses();
 
-          return true;
-        } catch (error) {
-          console.error(
-            "Erreur suppression stick :",
-            error
-          );
+        return true;
+      } catch (error) {
+        console.error("Erreur suppression stick :", error);
 
-          return false;
-        }
-      },
-      [isAdmin, loadStickStatuses]
-    );
+        return false;
+      }
+    },
+    [isAdmin, loadStickStatuses],
+  );
 
-    useEffect(() => {
-        loadSticks();
-        loadStickStatuses();
-    }, [loadSticks, loadStickStatuses]);
+  useEffect(() => {
+    loadSticks();
+    loadStickStatuses();
+  }, [loadSticks, loadStickStatuses]);
 
   return {
     sticks,

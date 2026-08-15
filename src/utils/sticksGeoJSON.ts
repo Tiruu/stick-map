@@ -1,11 +1,8 @@
-import type {
-  Stick,
-  StickStatus,
-} from "../types";
+import type { Stick, StickStatus } from "../types";
 
 export function sticksToGeoJSON(
   sticks: Stick[],
-  statuses: Record<string, StickStatus>
+  statuses: Record<string, StickStatus>,
 ) {
   return {
     type: "FeatureCollection" as const,
@@ -16,20 +13,15 @@ export function sticksToGeoJSON(
       geometry: {
         type: "Point" as const,
 
-        coordinates: [
-          stick.longitude,
-          stick.latitude,
-        ],
+        coordinates: [stick.longitude, stick.latitude],
       },
 
       properties: {
         id: stick.id,
 
-        status:
-          statuses[stick.id] ?? "unknown",
+        status: statuses[stick.id] ?? "unknown",
 
-        moderation_status:
-          stick.moderation_status,
+        moderation_status: stick.moderation_status,
       },
     })),
   };
