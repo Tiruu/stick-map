@@ -1,6 +1,7 @@
 export type UserLocation = {
   latitude: number;
   longitude: number;
+  accuracy: number;
 };
 
 export function getCurrentLocation(): Promise<UserLocation> {
@@ -17,6 +18,7 @@ export function getCurrentLocation(): Promise<UserLocation> {
         resolve({
           latitude: position.coords.latitude,
           longitude: position.coords.longitude,
+          accuracy: position.coords.accuracy,
         });
       },
       (error) => {
