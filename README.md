@@ -87,52 +87,6 @@ La carte utilise :
 
 Les données des sticks sont transformées en GeoJSON via un utilitaire dédié et les couleurs de la carte sont centralisées dans `src/utils/mapColors.ts`.
 
-## Installation locale
-
-### Prérequis
-
-- Node.js
-- npm
-- un projet Supabase configuré
-
-### Installation
-
-```bash
-npm install
-```
-
-### Variables d'environnement
-
-Créer un fichier `.env.local` à la racine du projet :
-
-```env
-VITE_SUPABASE_URL=
-VITE_SUPABASE_ANON_KEY=
-VITE_TURNSTILE_SITE_KEY=
-```
-
-> Ne jamais commit les valeurs réelles de `.env.local`.
-
-### Lancer le projet
-
-```bash
-npm run dev
-```
-
-### Vérifier le build de production
-
-```bash
-npm run build
-```
-
-### Formater le code
-
-Le projet utilise Prettier :
-
-```bash
-npm run format
-```
-
 ## Déploiement
 
 Le projet est déployé sur **Vercel** et utilise le build Vite pour produire la version de production.
