@@ -2,8 +2,10 @@ import { useEffect, useRef } from "react";
 
 import {
   Map,
+  Marker,
   GeolocateControl,
   type GeoJSONSource,
+  type MapMouseEvent,
 } from "maplibre-gl";
 
 import MaplibreGeocoder, {
@@ -26,6 +28,10 @@ type UseMapOptions = {
   stickStatuses: Record<string, StickStatus>;
   addMode: boolean;
   onStickClick: (stick: Stick) => void;
+  onAddLocation: (
+    longitude: number,
+    latitude: number
+  ) => void;
 };
 
 export function useMap({
@@ -34,11 +40,17 @@ export function useMap({
   stickStatuses,
   addMode,
   onStickClick,
+  onAddLocation,
 }: UseMapOptions) {
   const mapRef = useRef<Map | null>(null);
   const sticksRef = useRef<Stick[]>(sticks);
   const addModeRef = useRef(addMode);
   const onStickClickRef = useRef(onStickClick);
+  const markerRef = useRef<Marker | null>(null);
+  const clearAddMarker = () => {
+    markerRef.current?.remove();
+    markerRef.current = null;
+  }
 
     useEffect(() => {
         sticksRef.current = sticks;
@@ -52,6 +64,16 @@ export function useMap({
         onStickClickRef.current =
         onStickClick;
     }, [onStickClick]);
+
+    useEffect(() => {
+        if (!addMode) {
+            return;
+        }
+
+        return () => {
+            clearAddMarker();
+        };
+    }, [addMode]);
 
   useEffect(() => {
     if (!mapContainer.current) {
@@ -439,10 +461,64 @@ export function useMap({
     map.touchZoomRotate.disableRotation();
 
     return () => {
-      map.remove();
-      mapRef.current = null;
+        clearAddMarker();
+
+        map.remove();
+        mapRef.current = null;
     };
   }, [mapContainer]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+
+    if (!map) {
+        return;
+    }
+
+    if (!addMode) {
+        map.dragPan.enable();
+        map.getCanvas().style.cursor = "";
+        return;
+    }
+
+    map.dragPan.disable();
+    map.getCanvas().style.cursor = "crosshair";
+
+    const handleClick = (
+        event: MapMouseEvent
+    ) => {
+        const {
+        lng,
+        lat,
+        } = event.lngLat;
+
+        if (markerRef.current) {
+        markerRef.current.setLngLat([
+            lng,
+            lat,
+        ]);
+        } else {
+        markerRef.current =
+            new Marker()
+            .setLngLat([lng, lat])
+            .addTo(map);
+        }
+
+        onAddLocation(lng, lat);
+    };
+
+    map.once(
+        "click",
+        handleClick
+    );
+
+    return () => {
+        map.off(
+        "click",
+        handleClick
+        );
+    };
+    }, [addMode, onAddLocation]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -476,6 +552,6 @@ export function useMap({
   }, [sticks, stickStatuses]);
 
   return {
-    mapRef,
+    clearAddMarker,
   };
 }

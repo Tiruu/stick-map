@@ -5,9 +5,7 @@ import {
 } from "react";
 
 import {
-  Marker,
   setWorkerUrl,
-  type MapMouseEvent,
 } from "maplibre-gl";
 
 import { Analytics } from "@vercel/analytics/react";
@@ -113,7 +111,6 @@ function App() {
     isAdmin,
   });
   const mapContainer = useRef<HTMLDivElement>(null);
-  const markerRef = useRef<Marker | null>(null);
   const [addMode, setAddMode] = useState(false);
   const [draftStick, setDraftStick] = useState<DraftStick | null>(null);
   const [selectedStick, setSelectedStick] = useState<Stick | null>(null);
@@ -141,6 +138,33 @@ function App() {
     closePublicProfile,
   } = usePublicProfile(user);
 
+  const {clearAddMarker} = useMap({
+    mapContainer,
+    sticks,
+    stickStatuses,
+    addMode,
+
+    onStickClick: (stick) => {
+      setSelectedStick(stick);
+
+      loadStickAuthor(stick.user_id);
+      loadConfirmations(stick.id);
+      loadReports(stick.id);
+    },
+
+    onAddLocation: (
+      longitude,
+      latitude
+    ) => {
+      setDraftStick({
+        lng: longitude,
+        lat: latitude,
+      });
+
+      setAddMode(false);
+    },
+  });
+
   async function openProfile() {
     if (!user) {
       return;
@@ -156,20 +180,6 @@ function App() {
       );
     }
   }
-  const { mapRef } = useMap({
-    mapContainer,
-    sticks,
-    stickStatuses,
-    addMode,
-
-    onStickClick: (stick) => {
-      setSelectedStick(stick);
-
-      loadStickAuthor(stick.user_id);
-      loadConfirmations(stick.id);
-      loadReports(stick.id);
-    },
-  });
 
   async function handleFriendSearch(
     email: string
@@ -291,49 +301,8 @@ function App() {
     };
   }, [user]);
 
-  useEffect(() => {
-    const map = mapRef.current;
-
-    if (!map) return;
-
-    if (!addMode) {
-      map.dragPan.enable();
-      map.getCanvas().style.cursor = "";
-      return;
-    }
-
-    map.dragPan.disable();
-    map.getCanvas().style.cursor = "crosshair";
-
-    const handleClick = (event: MapMouseEvent) => {
-      const { lng, lat } = event.lngLat;
-
-      if (markerRef.current) {
-        markerRef.current.setLngLat([lng, lat]);
-      } else {
-        markerRef.current = new Marker()
-          .setLngLat([lng, lat])
-          .addTo(map);
-      }
-
-      setDraftStick({
-        lng,
-        lat,
-      });
-
-      setAddMode(false);
-    };
-
-    map.once("click", handleClick);
-
-    return () => {
-      map.off("click", handleClick);
-    };
-  }, [addMode]);
-
   function cancelStick() {
-    markerRef.current?.remove();
-    markerRef.current = null;
+    clearAddMarker();
 
     setDraftStick(null);
     setDescription("");
@@ -383,8 +352,7 @@ function App() {
       return;
     }
 
-    markerRef.current?.remove();
-    markerRef.current = null;
+    clearAddMarker();
 
     setDraftStick(null);
     setDescription("");
