@@ -1,4 +1,9 @@
-import { useEffect, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 
 import {
   Map,
@@ -48,6 +53,7 @@ import StickDetails from "./components/StickDetails";
 import ValidationPanel from "./components/ValidationPanel";
 import AdminModerationPanel from "./components/AdminModerationPanel";
 
+
 import {
   getSticks,
   createStick,
@@ -81,12 +87,12 @@ import {
 import FriendsPanel from "./components/FriendsPanel";
 
 import {
-  getMyFriendships,
   getFriendshipBetween,
   sendFriendRequest,
-  updateFriendshipStatus,
   findUserByEmail,
 } from "./services/friends";
+
+import { useFriends } from "./hooks/useFriends";
 
 setWorkerUrl(workerUrl);
 
@@ -135,80 +141,19 @@ function App() {
 
   const [showRanking, setShowRanking] = useState(false);
 
-  const [friendships, setFriendships] = useState<Friendship[]>([]);
   const [publicProfile, setPublicProfile] = useState<Profile | null>(null);
   const [publicProfileFriendship, setPublicProfileFriendship] = useState<Friendship | null>(null);
   const [showFriends, setShowFriends] = useState(false);
-  const [friendProfiles, setFriendProfiles] = useState<Profile[]>([]);
-  const [requesterProfiles, setRequesterProfiles] = useState<Record<string, Profile>>({});
 
-  const pendingFriendRequests =
-    friendships.filter(
-      (friendship) =>
-        friendship.status === "pending" &&
-        friendship.addressee_id === user?.id
-    );
-
-  const geocoderApi: MaplibreGeocoderApi = {
-    forwardGeocode: async (
-      config: MaplibreGeocoderApiConfig
-    ): Promise<MaplibreGeocoderFeatureResults> => {
-      const features: MaplibreGeocoderFeatureResults["features"] = [];
-
-      if (typeof config.query !== "string") {
-        return {
-          type: "FeatureCollection",
-          features,
-        };
-      }
-
-      try {
-        const response = await fetch(
-          `https://nominatim.openstreetmap.org/search?` +
-            new URLSearchParams({
-              q: config.query,
-              format: "geojson",
-              addressdetails: "1",
-              limit: "5",
-            })
-        );
-
-        const geojson = await response.json();
-
-        const seen = new Set<string>();
-
-        for (const feature of geojson.features) {
-          const displayName = feature.properties.display_name;
-
-          if (seen.has(displayName)) {
-            continue;
-          }
-
-          seen.add(displayName);
-
-          features.push({
-            type: "Feature",
-            geometry: feature.geometry,
-            place_name: displayName,
-            properties: feature.properties,
-            text: displayName,
-            place_type: ["place"],
-            center: feature.geometry.coordinates,
-          });
-        }
-      } catch (error) {
-        console.error(
-          "Erreur recherche adresse :",
-          error
-        );
-      }
-
-      return {
-        type: "FeatureCollection",
-        features,
-      };
-    },
-  };
+  const {
+    friendships,
+    friendProfiles,
+    requesterProfiles,
+    pendingFriendRequests,
+    loadFriends,
+    acceptFriend,
+    rejectFriend,
+  } = useFriends(user);
 
   function sticksToGeoJSON(
     sticks: Stick[],
@@ -240,15 +185,6 @@ function App() {
       })),
     };
   }
-  
-  async function loadProfile(userId: string) {
-    try {
-      const data = await getProfile(userId);
-      setProfile(data);
-    } catch (error) {
-      console.error("Erreur chargement profil :", error);
-    }
-  }
 
   async function openProfile() {
     console.log("Ouverture profil");
@@ -268,108 +204,6 @@ function App() {
     } catch (error) {
       console.error(
         "Erreur chargement profil :",
-        error
-      );
-    }
-  }
-
-  async function loadFriends() {
-    if (!user) {
-      setFriendships([]);
-      setFriendProfiles([]);
-      return;
-    }
-
-    try {
-      const data =
-        await getMyFriendships(user.id);
-
-      setFriendships(data);
-
-      const accepted =
-        data.filter(
-          (friendship) =>
-            friendship.status === "accepted"
-        );
-
-      const profiles = await Promise.all(
-        accepted.map(async (friendship) => {
-          const friendId =
-            friendship.requester_id === user.id
-              ? friendship.addressee_id
-              : friendship.requester_id;
-
-          return getProfile(friendId);
-        })
-      );
-      const pendingRequests =
-        data.filter(
-          (friendship) =>
-            friendship.status === "pending" &&
-            friendship.addressee_id === user.id
-        );
-
-      const requesterEntries =
-        await Promise.all(
-          pendingRequests.map(async (request) => {
-            const requester =
-              await getProfile(
-                request.requester_id
-              );
-
-            return [
-              request.requester_id,
-              requester,
-            ] as const;
-          })
-        );
-
-      setRequesterProfiles(
-        Object.fromEntries(
-          requesterEntries
-        )
-      );
-
-      setFriendProfiles(profiles);
-    } catch (error) {
-      console.error(
-        "Erreur chargement amis :",
-        error
-      );
-    }
-  }
-
-  async function acceptFriend(
-    friendshipId: string
-  ) {
-    try {
-      await updateFriendshipStatus(
-        friendshipId,
-        "accepted"
-      );
-
-      await loadFriends();
-    } catch (error) {
-      console.error(
-        "Erreur acceptation ami :",
-        error
-      );
-    }
-  }
-
-  async function rejectFriend(
-    friendshipId: string
-  ) {
-    try {
-      await updateFriendshipStatus(
-        friendshipId,
-        "rejected"
-      );
-
-      await loadFriends();
-    } catch (error) {
-      console.error(
-        "Erreur refus ami :",
         error
       );
     }
@@ -452,35 +286,14 @@ function App() {
     }
   }
 
-  async function loadSticks() {
-    try {
-      const data = await getSticks(
-        user?.id ?? null,
-        isAdmin
-      );
-
-      setSticks(data);
-    } catch (error) {
-      console.error(
-        "Erreur chargement sticks :",
-        error
-      );
-    }
-  }
-
-  async function loadPendingSticks() {
-    if (!user) {
-      setPendingSticks([]);
-      return;
-    }
-
+  async function loadPendingSticks(userId: string) {
     try {
       const data = await getPendingSticks();
 
       const { data: votes, error } = await supabase
         .from("stick_validation_votes")
         .select("stick_id")
-        .eq("user_id", user.id);
+        .eq("user_id", userId);
 
       if (error) {
         throw error;
@@ -492,7 +305,7 @@ function App() {
 
       const availableSticks = data.filter(
         (stick) =>
-          stick.user_id !== user.id &&
+          stick.user_id !== userId &&
           !votedStickIds.has(stick.id)
       );
 
@@ -557,7 +370,6 @@ function App() {
 
   async function loadReviewSticks() {
     if (!isAdmin) {
-      setReviewSticks([]);
       return;
     }
 
@@ -587,42 +399,101 @@ function App() {
   }
 
   useEffect(() => {
-    loadSticks();
-    loadStickStatuses();
+    let cancelled = false;
+
+    async function loadMapData() {
+      try {
+        const [sticksData, statusesData] =
+          await Promise.all([
+            getSticks(
+              user?.id ?? null,
+              isAdmin
+            ),
+            getStickStatuses(),
+          ]);
+
+        if (cancelled) {
+          return;
+        }
+
+        setSticks(sticksData);
+        setStickStatuses(statusesData);
+      } catch (error) {
+        console.error(
+          "Erreur chargement carte :",
+          error
+        );
+      }
+    }
+
+    loadMapData();
+
+    return () => {
+      cancelled = true;
+    };
   }, [user, isAdmin]);
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => {
-      const currentUser = data.user;
+    let cancelled = false;
 
-      setUser(currentUser);
+    async function initializeAuth() {
+      try {
+        const {
+          data: { user: currentUser },
+        } = await supabase.auth.getUser();
 
-      if (currentUser) {
-        loadProfile(currentUser.id);
-      }
-      loadRanking();
-    });
-
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange(
-      async (_event, session) => {
-        const currentUser = session?.user ?? null;
+        if (cancelled) return;
 
         setUser(currentUser);
 
-        if (currentUser) {
-          loadProfile(currentUser.id);
-        } else {
+        if (!currentUser) {
           setProfile(null);
+          setReviewSticks([]);
+          setPendingSticks([]);
+          await loadRanking();
+          return;
         }
+
+        const profileData =
+          await getProfile(currentUser.id);
+
+        if (cancelled) return;
+
+        setProfile(profileData);
+
+        if (profileData.role === "admin") {
+          const reviewData =
+            await getReviewSticks();
+
+          if (!cancelled) {
+            setReviewSticks(reviewData);
+          }
+        } else {
+          setReviewSticks([]);
+        }
+
+        await loadFriends();
+
+        if (!cancelled) {
+          await loadPendingSticks(
+            currentUser.id
+          );
+          await loadRanking();
+        }
+      } catch (error) {
+        console.error(
+          "Erreur initialisation authentification :",
+          error
+        );
       }
-    );
+    }
+
+    initializeAuth();
 
     return () => {
-      subscription.unsubscribe();
+      cancelled = true;
     };
-  }, []);
+  }, [loadFriends]);
 
   useEffect(() => {
     sticksRef.current = sticks;
@@ -645,6 +516,67 @@ function App() {
     });
 
     mapRef.current = map;
+
+    const geocoderApi: MaplibreGeocoderApi = {
+      forwardGeocode: async (
+        config: MaplibreGeocoderApiConfig
+      ): Promise<MaplibreGeocoderFeatureResults> => {
+        const features: MaplibreGeocoderFeatureResults["features"] = [];
+
+        if (typeof config.query !== "string") {
+          return {
+            type: "FeatureCollection",
+            features,
+          };
+        }
+
+        try {
+          const response = await fetch(
+            `https://nominatim.openstreetmap.org/search?` +
+              new URLSearchParams({
+                q: config.query,
+                format: "geojson",
+                addressdetails: "1",
+                limit: "5",
+              })
+          );
+
+          const geojson = await response.json();
+
+          const seen = new Set<string>();
+
+          for (const feature of geojson.features) {
+            const displayName = feature.properties.display_name;
+
+            if (seen.has(displayName)) {
+              continue;
+            }
+
+            seen.add(displayName);
+
+            features.push({
+              type: "Feature",
+              geometry: feature.geometry,
+              place_name: displayName,
+              properties: feature.properties,
+              text: displayName,
+              place_type: ["place"],
+              center: feature.geometry.coordinates,
+            });
+          }
+        } catch (error) {
+          console.error(
+            "Erreur recherche adresse :",
+            error
+          );
+        }
+
+        return {
+          type: "FeatureCollection",
+          features,
+        };
+      },
+    };
 
     map.on("load", () => {
     map.addSource("sticks", {
@@ -673,7 +605,7 @@ function App() {
         maplibregl: {
           Map,
           Marker,
-        } as any,
+        },
 
         placeholder: "Rechercher une ville ou une adresse",
         showResultsWhileTyping: true,
@@ -1086,23 +1018,6 @@ function App() {
     setShowProfile(false);
   }
 
-  useEffect(() => {
-    if (!user) {
-      setPendingSticks([]);
-      return;
-    }
-
-    loadPendingSticks();
-  }, [user]);
-
-  useEffect(() => {
-    if (isAdmin) {
-      loadReviewSticks();
-    } else {
-      setReviewSticks([]);
-    }
-  }, [isAdmin]);
-
   async function handleAdminApproveStick(
     stick: Stick
   ) {
@@ -1110,8 +1025,14 @@ function App() {
       await approveReviewedStick(stick.id);
 
       await loadReviewSticks();
-      await loadSticks();
       await loadStickStatuses();
+
+      const data = await getSticks(
+        user?.id ?? null,
+        isAdmin
+      );
+
+      setSticks(data);
 
       setAdminModerationIndex(0);
     } catch (error) {
@@ -1129,7 +1050,12 @@ function App() {
       await rejectReviewedStick(stick.id);
 
       await loadReviewSticks();
-      await loadSticks();
+      const data = await getSticks(
+        user?.id ?? null,
+        isAdmin
+      );
+
+      setSticks(data);
       await loadStickStatuses();
 
       setAdminModerationIndex(0);
@@ -1154,8 +1080,13 @@ function App() {
         vote
       );
 
-      await loadPendingSticks();
-      await loadSticks();
+      await loadPendingSticks(user.id);
+      const data = await getSticks(
+        user?.id ?? null,
+        isAdmin
+      );
+
+      setSticks(data); 
       await loadStickStatuses();
 
       setValidationIndex(0);
@@ -1166,10 +1097,6 @@ function App() {
       );
     }
   }
-
-  useEffect(() => {
-    loadFriends();
-  }, [user]);
 
   return (
     <>
