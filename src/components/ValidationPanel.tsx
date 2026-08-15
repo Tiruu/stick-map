@@ -33,12 +33,20 @@ export default function ValidationPanel({
             ✕
           </button>
 
-          <h2>Validation</h2>
+          <h2>🔎 Validation</h2>
 
           <p>Aucun stick à valider.</p>
         </div>
       </div>
     );
+  }
+
+  function openDirections() {
+    const url =
+      `https://www.google.com/maps/dir/?api=1` +
+      `&destination=${stick.latitude},${stick.longitude}`;
+
+    window.open(url, "_blank", "noopener,noreferrer");
   }
 
   return (
@@ -48,11 +56,15 @@ export default function ValidationPanel({
           ✕
         </button>
 
-        <h2>🔎 Stick à valider</h2>
+        <div className="validation-header">
+          <div>
+            <h2>🔎 Stick à valider</h2>
 
-        <p className="validation-counter">
-          {currentIndex + 1} / {sticks.length}
-        </p>
+            <p className="validation-counter">
+              {currentIndex + 1} / {sticks.length}
+            </p>
+          </div>
+        </div>
 
         {stick.photo_path && (
           <img
@@ -62,22 +74,52 @@ export default function ValidationPanel({
           />
         )}
 
-        <p>{stick.description || "Aucune description"}</p>
+        <div className="validation-info">
+          {stick.origin_type && (
+            <p className="validation-origin">
+              {stick.origin_type === "pasted"
+                ? "🧷 Stick collé"
+                : "👀 Stick vu"}
+            </p>
+          )}
 
-        <p className="stick-coordinates">
-          📍 {stick.latitude.toFixed(5)}, {stick.longitude.toFixed(5)}
+          <p className="validation-description">
+            {stick.description || "Aucune description"}
+          </p>
+
+          <div className="validation-location">
+            <strong>📍 Emplacement</strong>
+
+            <span>
+              {stick.latitude.toFixed(5)}, {stick.longitude.toFixed(5)}
+            </span>
+          </div>
+        </div>
+
+        <button
+          type="button"
+          className="validation-directions"
+          onClick={openDirections}
+        >
+          🗺️ Ouvrir l'itinéraire
+        </button>
+
+        <p className="validation-help">
+          Rends-toi sur place avant de voter.
+          <br />
+          Une vérification GPS est effectuée lors de la validation.
         </p>
 
         <div className="validation-actions">
           <button className="validation-reject" onClick={() => onReject(stick)}>
-            ❌ Je doute
+            ❌ Non-valable !
           </button>
 
           <button
             className="validation-approve"
             onClick={() => onApprove(stick)}
           >
-            ✅ Valider
+            ✅ Valable !
           </button>
         </div>
 
