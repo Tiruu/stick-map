@@ -111,8 +111,6 @@ function App() {
     adminModerationIndex,
     setAdminModerationIndex,
 
-    loadPendingSticks,
-
     handleValidationVote,
     handleAdminApproveStick,
     handleAdminRejectStick,
@@ -164,7 +162,6 @@ function App() {
     friendProfiles,
     requesterProfiles,
     pendingFriendRequests,
-    loadFriends,
     acceptFriend,
     rejectFriend,
   } = useFriends(user);
@@ -328,50 +325,23 @@ function App() {
   useEffect(() => {
     let cancelled = false;
 
-    async function handleUser(
-      currentUser: User | null
-    ) {
-      if (cancelled) {
-        return;
-      }
-
-      setUser(currentUser);
-
-      if (!currentUser) {
-        setProfile(null);
-        await loadRanking();
-        return;
-      }
-
+    async function initializeAuth() {
       try {
-        const profileData =
-          await getProfile(currentUser.id);
+        const {
+          data: { user: currentUser },
+        } = await supabase.auth.getUser();
 
         if (cancelled) {
           return;
         }
 
-        setProfile(profileData);
-
-        await loadFriends();
-        await loadPendingSticks(
-          currentUser.id
-        );
-        await loadRanking();
+        setUser(currentUser);
       } catch (error) {
         console.error(
-          "Erreur chargement utilisateur :",
+          "Erreur initialisation authentification :",
           error
         );
       }
-    }
-
-    async function initializeAuth() {
-      const {
-        data: { user: currentUser },
-      } = await supabase.auth.getUser();
-
-      await handleUser(currentUser);
     }
 
     initializeAuth();
@@ -380,9 +350,7 @@ function App() {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(
       (_event, session) => {
-        void handleUser(
-          session?.user ?? null
-        );
+        setUser(session?.user ?? null);
       }
     );
 
@@ -390,7 +358,49 @@ function App() {
       cancelled = true;
       subscription.unsubscribe();
     };
-  }, [loadFriends]);
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadUserData() {
+      if (!user) {
+        setProfile(null);
+        return;
+      }
+
+      try {
+        const profileData =
+          await getProfile(user.id);
+
+        if (cancelled) {
+          return;
+        }
+
+        setProfile(profileData);
+
+        const rankingData =
+          await getRanking();
+
+        if (cancelled) {
+          return;
+        }
+
+        setRanking(rankingData);
+      } catch (error) {
+        console.error(
+          "Erreur chargement données utilisateur :",
+          error
+        );
+      }
+    }
+
+    loadUserData();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [user]);
 
   useEffect(() => {
     sticksRef.current = sticks;
