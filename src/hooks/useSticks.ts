@@ -126,6 +126,13 @@ export function useSticks({ user, isAdmin }: UseSticksOptions) {
       try {
         const location = await getCurrentLocation();
 
+        console.log("Position utilisée :", {
+          latitude: location.latitude,
+          longitude: location.longitude,
+        });
+
+        console.log("Stick :", stickId);
+
         await confirmStickPresence(
           stickId,
           location.latitude,
