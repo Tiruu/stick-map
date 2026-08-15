@@ -16,6 +16,8 @@ type StickDetailsProps = {
   isAdmin: boolean;
   onDelete: () => void;
   onOpenAuthor?: (userId: string) => void;
+
+  lastActivityAuthor: Profile | null;
 };
 
 export default function StickDetails({
@@ -31,6 +33,7 @@ export default function StickDetails({
   isAdmin,
   onDelete,
   onOpenAuthor,
+  lastActivityAuthor,
 }: StickDetailsProps) {
   const isOwner = currentUserId !== null && stick.user_id === currentUserId;
 
@@ -67,6 +70,54 @@ export default function StickDetails({
 
       <h2>Stick</h2>
 
+      <div className="stick-history">
+        {stick.origin_type && (
+          <p className="stick-origin">
+            {stick.origin_type === "pasted"
+              ? `🧷 Stick collé par : ${author?.username ?? "Inconnu"}`
+              : `👀 Stick vu par : ${author?.username ?? "Inconnu"}`}
+          </p>
+        )}
+
+        {confirmations[0] || reports[0] ? (
+          (() => {
+            const latestConfirmation = confirmations[0];
+
+            const latestReport = reports[0];
+
+            const confirmationIsLatest =
+              latestConfirmation &&
+              (!latestReport ||
+                new Date(latestConfirmation.updated_at).getTime() >
+                  new Date(latestReport.updated_at).getTime());
+
+            if (confirmationIsLatest) {
+              return (
+                <p className="stick-last-activity">
+                  👀 Vu en dernier le{" "}
+                  {new Date(latestConfirmation.updated_at).toLocaleDateString(
+                    "fr-FR",
+                  )}{" "}
+                  par : {lastActivityAuthor?.username ?? "Inconnu"}
+                </p>
+              );
+            }
+
+            return (
+              <p className="stick-last-activity">
+                🚩 Signalé disparu le{" "}
+                {new Date(latestReport!.updated_at).toLocaleDateString("fr-FR")}{" "}
+                par : {lastActivityAuthor?.username ?? "Inconnu"}
+              </p>
+            );
+          })()
+        ) : (
+          <p className="stick-last-activity">
+            Aucune activité depuis son ajout
+          </p>
+        )}
+      </div>
+
       <p className="stick-author">
         Ajouté par{" "}
         {author ? (
@@ -88,6 +139,7 @@ export default function StickDetails({
       <p className="stick-coordinates">
         📍 {stick.latitude.toFixed(5)}, {stick.longitude.toFixed(5)}
       </p>
+
       {stick.moderation_status === "pending" && (
         <div className="moderation-status moderation-pending">
           <strong>🟠 En attente de validation</strong>
@@ -103,6 +155,7 @@ export default function StickDetails({
           <span>Ce stick doit être examiné par un modérateur.</span>
         </div>
       )}
+
       {stick.moderation_status === "approved" && (
         <div className="stick-status">
           {status === "present" && (
@@ -137,17 +190,19 @@ export default function StickDetails({
           )}
         </div>
       )}
+
       {currentUserId && (
         <div className="stick-actions">
           <button onClick={onConfirm} disabled={isOwner}>
-            {isOwner ? " Tu ne peux valider ton stick." : "✅ Je l'ai vu !"}
+            {isOwner ? "Tu ne peux valider ton stick." : "✅ Je l'ai vu !"}
           </button>
 
           <button onClick={onReportMissing} disabled={isOwner}>
-            {isOwner ? " Tu ne peux signaler ton stick." : "🚩 Il a disparu"}
+            {isOwner ? "Tu ne peux signaler ton stick." : "🚩 Il a disparu"}
           </button>
         </div>
       )}
+
       {isAdmin && (
         <div className="admin-actions">
           <button onClick={onDelete}>🗑 Supprimer le stick</button>

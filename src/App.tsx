@@ -9,7 +9,7 @@ import "@maplibre/maplibre-gl-geocoder/dist/maplibre-gl-geocoder.css";
 import "./App.css";
 import { supabase } from "./supabase";
 import Auth from "./Auth";
-import type { DraftStick, Stick, Profile, StickOrigin } from "./types";
+import type { DraftStick, Stick, Profile, StickOrigin, StickConfirmation, StickReport, } from "./types";
 import Ranking from "./components/Ranking";
 import UserPanel from "./components/UserPanel";
 import ProfilePanel from "./components/ProfilePanel";
@@ -18,7 +18,7 @@ import StickForm from "./components/StickForm";
 import StickDetails from "./components/StickDetails";
 import ValidationPanel from "./components/ValidationPanel";
 import AdminModerationPanel from "./components/AdminModerationPanel";
-import { getUserSticks } from "./services/sticks";
+import { getUserSticks, getConfirmations, getReports } from "./services/sticks";
 import { getProfile } from "./services/profiles";
 import { getStickPhotoUrl } from "./services/storage";
 import FriendsPanel from "./components/FriendsPanel";
@@ -40,6 +40,9 @@ function App() {
   const [userSticks, setUserSticks] = useState<Stick[]>([]);
   const isAdmin = profile?.role === "admin";
   const [selectedAuthor, setSelectedAuthor] = useState<Profile | null>(null);
+  const [lastActivityAuthor, setLastActivityAuthor] = useState<Profile | null>(null,);
+  const [confirmations, setConfirmations] = useState<StickConfirmation[]>([]);
+  const [reports, setReports] = useState<StickReport[]>([]);
   const [showValidation, setShowValidation] = useState(false);
   const [showAdminModeration, setShowAdminModeration] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -63,15 +66,7 @@ function App() {
   });
   const {
     sticks,
-
     stickStatuses,
-
-    confirmations,
-    reports,
-
-    loadConfirmations,
-    loadReports,
-
     saveStick,
     confirmStick,
     reportMissingStick,
@@ -114,8 +109,7 @@ function App() {
     onStickClick: (stick) => {
       setSelectedStick(stick);
       loadStickAuthor(stick.user_id);
-      loadConfirmations(stick.id);
-      loadReports(stick.id);
+      loadStickHistory(stick.id);
     },
     onAddLocation: (longitude, latitude) => {
       setDraftStick({
@@ -160,6 +154,67 @@ function App() {
       setShowFriends(false);
     } catch (error) {
       console.error("Erreur recherche utilisateur :", error);
+    }
+  }
+
+  async function loadLastActivityAuthor(
+    confirmations: StickConfirmation[],
+    reports: StickReport[],
+  ) {
+    const latestConfirmation = confirmations[0];
+    const latestReport = reports[0];
+
+    if (!latestConfirmation && !latestReport) {
+      setLastActivityAuthor(null);
+      return;
+    }
+
+    let userId: string;
+
+    if (latestConfirmation && !latestReport) {
+      userId = latestConfirmation.user_id;
+    } else if (!latestReport && latestConfirmation) {
+      userId = latestConfirmation.user_id;
+    } else {
+      const confirmationDate = new Date(
+        latestConfirmation.updated_at,
+      ).getTime();
+
+      const reportDate = new Date(latestReport.updated_at).getTime();
+
+      userId =
+        confirmationDate > reportDate
+          ? latestConfirmation.user_id
+          : latestReport.user_id;
+    }
+
+    try {
+      const data = await getProfile(userId);
+      setLastActivityAuthor(data);
+    } catch (error) {
+      console.error("Erreur chargement auteur dernière activité :", error);
+
+      setLastActivityAuthor(null);
+    }
+  }
+
+  async function loadStickHistory(stickId: string) {
+    try {
+      const [confirmationsData, reportsData] = await Promise.all([
+        getConfirmations(stickId),
+        getReports(stickId),
+      ]);
+
+      setConfirmations(confirmationsData);
+      setReports(reportsData);
+
+      await loadLastActivityAuthor(confirmationsData, reportsData);
+    } catch (error) {
+      console.error("Erreur chargement historique stick :", error);
+
+      setConfirmations([]);
+      setReports([]);
+      setLastActivityAuthor(null);
     }
   }
 
@@ -346,8 +401,7 @@ function App() {
             setSelectedStick(stick);
 
             loadStickAuthor(stick.user_id);
-            loadConfirmations(stick.id);
-            loadReports(stick.id);
+            loadStickHistory(stick.id);
           }}
 
           onUsernameUpdated={(username) => {
@@ -503,6 +557,7 @@ function App() {
           author={selectedAuthor}
           confirmations={confirmations}
           reports={reports}
+          lastActivityAuthor={lastActivityAuthor}
           currentUserId={user?.id ?? null}
           photoUrl={
             selectedStick.photo_path

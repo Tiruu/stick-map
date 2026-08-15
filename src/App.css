@@ -1345,6 +1345,72 @@ button:disabled {
   cursor: pointer;
   font-size: 16px;
 }
+.origin-choice {
+  margin-top: 16px;
+}
+
+.origin-choice > p {
+  margin-bottom: 10px;
+  font-weight: 600;
+}
+
+.origin-buttons {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.origin-button {
+  padding: 12px 14px;
+  border: 2px solid #d1d5db;
+  border-radius: 12px;
+  background: #fff;
+  color: #1f2937;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  transition:
+    border-color 0.15s ease,
+    background-color 0.15s ease,
+    transform 0.15s ease;
+}
+
+.origin-button:hover {
+  transform: translateY(-1px);
+}
+
+.origin-button.selected {
+  border-color: #0057a8;
+  background: #eaf3ff;
+}
+
+@media (max-width: 600px) {
+  .origin-buttons {
+    grid-template-columns: 1fr;
+  }
+}
+
+.stick-history {
+  margin: 12px 0 16px;
+  padding: 12px;
+  border-radius: 12px;
+  background: #f8fafc;
+}
+
+.stick-origin,
+.stick-last-activity {
+  margin: 0;
+}
+
+.stick-origin {
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+
+.stick-last-activity {
+  color: #475569;
+  font-size: 14px;
+}
 
 /* -------------------- */
 /* MOBILE               */
