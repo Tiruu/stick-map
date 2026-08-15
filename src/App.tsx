@@ -36,9 +36,6 @@ import type {
   DraftStick,
   Stick,
   Profile,
-  RankingEntry,
-  StickStatus,
-  Friendship,
 } from "./types";
 
 import Ranking from "./components/Ranking";
@@ -60,24 +57,21 @@ import {
 } from "./services/profiles";
 
 import {
-  getRanking,
-} from "./services/ranking";
-
-import {
   getStickPhotoUrl,
 } from "./services/storage";
 
 import FriendsPanel from "./components/FriendsPanel";
 
 import {
-  getFriendshipBetween,
-  sendFriendRequest,
   findUserByEmail,
 } from "./services/friends";
 
 import { useFriends } from "./hooks/useFriends";
 import { useModeration } from "./hooks/useModeration";
 import { useSticks } from "./hooks/useSticks";
+import { useRanking } from "./hooks/useRanking";
+import { usePublicProfile } from "./hooks/usePublicProfile";
+import { sticksToGeoJSON } from "./utils/sticksGeoJSON";
 
 setWorkerUrl(workerUrl);
 
@@ -91,7 +85,6 @@ function App() {
   const isAdmin = profile?.role === "admin";
 
   const [selectedAuthor, setSelectedAuthor] = useState<Profile | null>(null);
-  const [ranking, setRanking] = useState<RankingEntry[]>([]);
   const sticksRef = useRef<Stick[]>([]);
 
   const addModeRef = useRef(false);
@@ -152,9 +145,6 @@ function App() {
   const [photo, setPhoto] = useState<File | null>(null);
 
   const [showRanking, setShowRanking] = useState(false);
-
-  const [publicProfile, setPublicProfile] = useState<Profile | null>(null);
-  const [publicProfileFriendship, setPublicProfileFriendship] = useState<Friendship | null>(null);
   const [showFriends, setShowFriends] = useState(false);
 
   const {
@@ -166,98 +156,30 @@ function App() {
     rejectFriend,
   } = useFriends(user);
 
-  function sticksToGeoJSON(
-    sticks: Stick[],
-    statuses: Record<string, StickStatus>
-  ) {
-    return {
-      type: "FeatureCollection" as const,
+  const {
+    ranking,
+    loadRanking,
+  } = useRanking();
 
-      features: sticks.map((stick) => ({
-        type: "Feature" as const,
-
-        geometry: {
-          type: "Point" as const,
-          coordinates: [
-            stick.longitude,
-            stick.latitude,
-          ],
-        },
-
-        properties: {
-          id: stick.id,
-
-          status:
-            statuses[stick.id] ?? "unknown",
-
-          moderation_status:
-            stick.moderation_status,
-        },
-      })),
-    };
-  }
+  const {
+    publicProfile,
+    publicProfileFriendship,
+    openPublicProfile,
+    handleSendFriendRequest,
+    closePublicProfile,
+  } = usePublicProfile(user);
 
   async function openProfile() {
-    console.log("Ouverture profil");
-
     if (!user) {
-      console.log("Pas d'utilisateur connecté");
       return;
     }
-
     try {
       const data = await getUserSticks(user.id);
-
-      console.log("Sticks utilisateur :", data);
-
       setUserSticks(data);
       setShowProfile(true);
     } catch (error) {
       console.error(
         "Erreur chargement profil :",
-        error
-      );
-    }
-  }
-
-  async function openPublicProfile(
-    profileId: string
-  ) {
-    if (!user) return;
-
-    try {
-      const profile = await getProfile(profileId);
-
-      const friendship =
-        await getFriendshipBetween(
-          user.id,
-          profileId
-        );
-
-      setPublicProfile(profile);
-      setPublicProfileFriendship(friendship);
-    } catch (error) {
-      console.error(
-        "Erreur chargement profil public :",
-        error
-      );
-    }
-  }
-
-  async function handleSendFriendRequest() {
-    if (!user || !publicProfile) return;
-
-    try {
-      const friendship =
-        await sendFriendRequest(
-          user.id,
-          publicProfile.id
-        );
-
-      setPublicProfileFriendship(friendship);
-    } catch (error) {
-      console.error(
-        "Erreur demande d'ami :",
         error
       );
     }
@@ -311,16 +233,6 @@ function App() {
       setSelectedAuthor(null);
     }
   }
-
-  async function loadRanking() {
-    try {
-      const data = await getRanking();
-      setRanking(data);
-    } catch (error) {
-      console.error("Erreur classement :", error);
-    }
-  }
-
 
   useEffect(() => {
     let cancelled = false;
@@ -378,15 +290,6 @@ function App() {
         }
 
         setProfile(profileData);
-
-        const rankingData =
-          await getRanking();
-
-        if (cancelled) {
-          return;
-        }
-
-        setRanking(rankingData);
       } catch (error) {
         console.error(
           "Erreur chargement données utilisateur :",
@@ -946,9 +849,7 @@ function App() {
                 entry.user_id === publicProfile.id
             )?.stick_count ?? 0
           }
-          onClose={() =>
-            setPublicProfile(null)
-          }
+          onClose={closePublicProfile}
           onSendRequest={
             handleSendFriendRequest
           }
