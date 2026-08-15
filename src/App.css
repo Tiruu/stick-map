@@ -1412,6 +1412,93 @@ button:disabled {
   font-size: 14px;
 }
 
+.validation-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding-right: 40px;
+}
+
+.validation-header h2 {
+  margin: 0;
+}
+
+.validation-info {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.validation-origin {
+  display: inline-block;
+
+  align-self: flex-start;
+
+  margin: 0;
+  padding: 6px 10px;
+
+  border-radius: 999px;
+
+  background: #f1f5f9;
+
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.validation-description {
+  margin: 0;
+
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+.validation-location {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+
+  padding: 12px;
+
+  background: #f8fafc;
+
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+}
+
+.validation-location strong {
+  font-size: 14px;
+}
+
+.validation-location span {
+  color: #6b7280;
+  font-size: 13px;
+}
+
+.validation-directions {
+  width: 100%;
+  min-height: 44px;
+
+  margin-top: 4px;
+
+  border: 1px solid #dbeafe;
+  border-radius: 9px;
+
+  background: #eff6ff;
+  color: #1d4ed8;
+
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.validation-help {
+  margin: 0;
+
+  color: #6b7280;
+  font-size: 12px;
+  line-height: 1.5;
+  text-align: center;
+}
+
 /* -------------------- */
 /* MOBILE               */
 /* -------------------- */
