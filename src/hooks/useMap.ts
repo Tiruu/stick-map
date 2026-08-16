@@ -70,7 +70,30 @@ export function useMap({
 
     const map = new Map({
       container: mapContainer.current,
-      style: "https://tiles.openfreemap.org/styles/positron",
+      style: {
+            version: 8,
+            sources: {
+                // Source pour l'imagerie satellite ESRI
+                'satellite-tiles': {
+                    type: 'raster',
+                    tiles: [
+                        'https://arcgisonline.com{z}/{y}/{x}'
+                    ],
+                    tileSize: 256,
+                    attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'
+                }
+            },
+            layers: [
+                // Ajout de la couche de fond satellite
+                {
+                    id: 'satellite-layer',
+                    type: 'raster',
+                    source: 'satellite-tiles',
+                    minzoom: 0,
+                    maxzoom: 19
+                }
+            ]
+        },
       center: [3.57, 47.8],
       zoom: 12,
       dragRotate: false,
