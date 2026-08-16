@@ -1500,6 +1500,71 @@ button:disabled {
 }
 
 /* -------------------- */
+/* LOCATION CONFIRMATION */
+/* -------------------- */
+
+.location-confirmation {
+  position: absolute;
+  z-index: 60;
+
+  top: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+
+  width: min(420px, calc(100vw - 32px));
+
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+
+  padding: 16px;
+
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 14px;
+
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.18);
+}
+
+.location-confirmation p {
+  margin: 0;
+
+  font-size: 15px;
+  font-weight: 600;
+  text-align: center;
+}
+
+.location-confirmation button {
+  min-height: 44px;
+
+  padding: 10px 14px;
+
+  border: none;
+  border-radius: 9px;
+
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.location-confirmation button:first-of-type {
+  background: #f3f4f6;
+}
+
+.location-confirmation button:last-of-type {
+  background: #dcfce7;
+}
+
+@media (max-width: 700px) {
+  .location-confirmation {
+    top: 12px;
+
+    width: calc(100vw - 24px);
+
+    padding: 14px;
+  }
+}
+
+/* -------------------- */
 /* MOBILE               */
 /* -------------------- */
 
