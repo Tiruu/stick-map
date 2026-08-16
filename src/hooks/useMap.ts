@@ -70,7 +70,7 @@ export function useMap({
 
     const map = new Map({
       container: mapContainer.current,
-      style: "https://tiles.openfreemap.org/styles/3D",
+      style: "https://tiles.openfreemap.org/styles/positron",
       center: [3.57, 47.8],
       zoom: 12,
       dragRotate: false,
