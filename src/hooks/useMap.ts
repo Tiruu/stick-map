@@ -362,7 +362,6 @@ export function useMap({
       return;
     }
 
-    map.dragPan.disable();
     map.getCanvas().style.cursor = "crosshair";
 
     const handleClick = (event: MapMouseEvent) => {
