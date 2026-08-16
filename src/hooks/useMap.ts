@@ -377,7 +377,7 @@ export function useMap({
       onAddLocationRef.current(lng, lat);
     };
 
-    map.once("click", handleClick);
+    map.on("click", handleClick);
 
     return () => {
       map.off("click", handleClick);

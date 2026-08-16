@@ -372,6 +372,7 @@ function App() {
 
   function replaceDraftLocation() {
     setDraftLocation(null);
+    clearAddMarker();
   }
 
   return (
