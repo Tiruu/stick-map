@@ -9,7 +9,7 @@ import "@maplibre/maplibre-gl-geocoder/dist/maplibre-gl-geocoder.css";
 import "./App.css";
 import { supabase } from "./supabase";
 import Auth from "./Auth";
-import type { DraftStick, Stick, Profile, StickOrigin, StickConfirmation, StickReport, } from "./types";
+import type { DraftStick, Stick, Profile, StickOrigin, StickConfirmation, StickReport, DraftLocation } from "./types";
 import Ranking from "./components/Ranking";
 import UserPanel from "./components/UserPanel";
 import ProfilePanel from "./components/ProfilePanel";
@@ -79,6 +79,7 @@ function App() {
   const mapContainer = useRef<HTMLDivElement>(null);
   const [addMode, setAddMode] = useState(false);
   const [draftStick, setDraftStick] = useState<DraftStick | null>(null);
+  const [draftLocation, setDraftLocation] = useState<DraftLocation | null>(null);
   const [selectedStick, setSelectedStick] = useState<Stick | null>(null);
   const [description, setDescription] = useState("");
   const [photo, setPhoto] = useState<File | null>(null);
@@ -112,11 +113,10 @@ function App() {
       loadStickHistory(stick.id);
     },
     onAddLocation: (longitude, latitude) => {
-      setDraftStick({
+      setDraftLocation({
         lng: longitude,
         lat: latitude,
       });
-      setAddMode(false);
     },
   });
 
@@ -356,6 +356,24 @@ function App() {
     setOriginType(null);
   }
 
+  function confirmDraftLocation() {
+    if (!draftLocation) {
+      return;
+    }
+
+    setDraftStick({
+      lng: draftLocation.lng,
+      lat: draftLocation.lat,
+    });
+
+    setDraftLocation(null);
+    setAddMode(false);
+  }
+
+  function replaceDraftLocation() {
+    setDraftLocation(null);
+  }
+
   return (
     <>
       {!user && (
@@ -382,6 +400,15 @@ function App() {
       >
         + Ajouter un stick
       </button>
+      {draftLocation && (
+        <div className="location-confirmation">
+          <p>📍 Emplacement sélectionné</p>
+
+          <button onClick={replaceDraftLocation}>↩️ Replacer</button>
+
+          <button onClick={confirmDraftLocation}>✅ Valider la position</button>
+        </div>
+      )}
       {showProfile && profile && (
         <ProfilePanel
           profile={profile}

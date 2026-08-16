@@ -3,6 +3,11 @@ export type DraftStick = {
   lat: number;
 };
 
+export type DraftLocation = {
+  lat: number;
+  lng: number;
+};
+
 export type Stick = {
   id: string;
   latitude: number;

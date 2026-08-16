@@ -7,10 +7,10 @@ export function getActionErrorMessage(error: unknown): string {
   ) {
     switch (error.message) {
       case "Tu dois être à proximité du stick":
-        return "📍 Approche-toi à moins de 100 m du stick pour interagir avec lui.";
+        return "📍 Approche-toi du stick pour interagir avec lui.";
 
       case "Tu dois être à proximité de l'emplacement du stick":
-        return "📍 Approche-toi à moins de 100 m de l'emplacement choisi pour ajouter ce stick.";
+        return "📍 Approche-toi de l'emplacement choisi pour ajouter ce stick.";
 
       case "Utilisateur non authentifié":
         return "🔐 Tu dois être connecté pour effectuer cette action.";
