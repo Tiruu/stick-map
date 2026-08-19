@@ -18,12 +18,14 @@ import type { Stick, StickStatus } from "../types";
 
 import { sticksToGeoJSON } from "../utils/sticksGeoJSON";
 import { MAP_COLORS } from "../utils/mapColors";
+import type { UserLocation } from "../utils/geolocation";
 
 type UseMapOptions = {
   mapContainer: React.RefObject<HTMLDivElement | null>;
   sticks: Stick[];
   stickStatuses: Record<string, StickStatus>;
   addMode: boolean;
+  userLocation: UserLocation | null;
   onStickClick: (stick: Stick) => void;
   onAddLocation: (longitude: number, latitude: number) => void;
 };
@@ -33,6 +35,7 @@ export function useMap({
   sticks,
   stickStatuses,
   addMode,
+  userLocation,
   onStickClick,
   onAddLocation,
 }: UseMapOptions) {
@@ -41,6 +44,7 @@ export function useMap({
   const addModeRef = useRef(addMode);
   const onStickClickRef = useRef(onStickClick);
   const markerRef = useRef<Marker | null>(null);
+  const userLocationMarkerRef = useRef<Marker | null>(null);
   const clearAddMarker = () => {
     markerRef.current?.remove();
     markerRef.current = null;
@@ -62,6 +66,24 @@ export function useMap({
   useEffect(() => {
     onAddLocationRef.current = onAddLocation;
   }, [onAddLocation]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+
+    if (!map || !userLocation) {
+      return;
+    }
+    if (!userLocationMarkerRef.current) {
+      userLocationMarkerRef.current = new Marker()
+        .setLngLat([userLocation.longitude, userLocation.latitude])
+        .addTo(map);
+    } else {
+      userLocationMarkerRef.current.setLngLat([
+        userLocation.longitude,
+        userLocation.latitude,
+      ]);
+    }
+  }, [userLocation]);
 
   useEffect(() => {
     if (!mapContainer.current) {

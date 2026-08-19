@@ -109,6 +109,7 @@ function App() {
     sticks,
     stickStatuses,
     addMode,
+    userLocation,
     onStickClick: (stick) => {
       setSelectedStick(stick);
       loadStickAuthor(stick.user_id);
