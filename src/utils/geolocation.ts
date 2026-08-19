@@ -36,26 +36,27 @@ export function getCurrentLocation(): Promise<UserLocation> {
 export function watchUserLocation(
   onLocationUpdate: (location: UserLocation) => void,
 ) {
-  return navigator.geolocation.watchPosition(
-    (position) => {
-      const currentLat = position.coords.latitude;
-      const currentLong = position.coords.longitude;
-      const currentAccuracy = position.coords.accuracy;
+  const watchId = navigator.geolocation.watchPosition((position) => {
+    const currentLat = position.coords.latitude;
+    const currentLong = position.coords.longitude;
+    const currentAccuracy = position.coords.accuracy;
 
-      onLocationUpdate({
-        latitude: currentLat,
-        longitude: currentLong,
-        accuracy: currentAccuracy,
-      });
-    },
-  );
+    onLocationUpdate({
+      latitude: currentLat,
+      longitude: currentLong,
+      accuracy: currentAccuracy,
+    });
+  });
+
+  return watchId;
 }
 
+/* 
 function degreesToRadians(degrees: number): number {
   return (degrees * Math.PI) / 180;
-}
+} */
 
-function calculateDistance(
+/* function calculateDistance(
   latitude1: number,
   longitude1: number,
   latitude2: number,
@@ -80,4 +81,4 @@ function calculateDistance(
   const distance = earthRadius * c;
 
   return distance;
-}
+} */

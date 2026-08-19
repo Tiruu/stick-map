@@ -9,7 +9,7 @@ import "@maplibre/maplibre-gl-geocoder/dist/maplibre-gl-geocoder.css";
 import "./App.css";
 import { supabase } from "./supabase";
 import Auth from "./Auth";
-import type { DraftStick, Stick, Profile, StickOrigin, StickConfirmation, StickReport, DraftLocation } from "./types";
+import type { DraftStick, Stick, Profile, StickOrigin, StickConfirmation, StickReport, DraftLocation, } from "./types";
 import Ranking from "./components/Ranking";
 import UserPanel from "./components/UserPanel";
 import ProfilePanel from "./components/ProfilePanel";
@@ -29,6 +29,7 @@ import { useSticks } from "./hooks/useSticks";
 import { useRanking } from "./hooks/useRanking";
 import { usePublicProfile } from "./hooks/usePublicProfile";
 import { useMap } from "./hooks/useMap";
+import { watchUserLocation, type UserLocation } from "./utils/geolocation";
 import Toast from "./components/Toast";
 setWorkerUrl(workerUrl);
 
@@ -86,6 +87,7 @@ function App() {
   const [originType, setOriginType] = useState<StickOrigin | null>(null);
   const [showRanking, setShowRanking] = useState(false);
   const [showFriends, setShowFriends] = useState(false);
+  const [userLocation, setUserLocation] = useState<UserLocation | null>(null);
   const {
     friendships,
     friendProfiles,
@@ -119,6 +121,16 @@ function App() {
       });
     },
   });
+
+  useEffect(() => {
+    const watchId = watchUserLocation((location) => {
+      setUserLocation(location);
+    });
+
+    return () => {
+      navigator.geolocation.clearWatch(watchId);
+    };
+  }, []);
 
   async function openProfile() {
     if (!user) {
