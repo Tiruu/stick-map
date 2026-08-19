@@ -19,6 +19,7 @@ import type { Stick, StickStatus } from "../types";
 import { sticksToGeoJSON } from "../utils/sticksGeoJSON";
 import { MAP_COLORS } from "../utils/mapColors";
 import type { UserLocation } from "../utils/geolocation";
+import circle from "@turf/circle";
 
 type UseMapOptions = {
   mapContainer: React.RefObject<HTMLDivElement | null>;
@@ -69,6 +70,7 @@ export function useMap({
 
   useEffect(() => {
     const map = mapRef.current;
+    const radius = 0.03;
 
     if (!map || !userLocation) {
       return;
@@ -83,6 +85,22 @@ export function useMap({
         userLocation.latitude,
       ]);
     }
+    const locationCircle = circle(
+      [userLocation.longitude, userLocation.latitude],
+      radius,
+      {
+        steps: 64,
+        units: "kilometers",
+      },
+    );
+    const source = map.getSource("user-location-radius") as
+      GeoJSONSource | undefined;
+
+    if (!source) {
+      return;
+    }
+
+    source.setData(locationCircle);
   }, [userLocation]);
 
   useEffect(() => {
@@ -164,6 +182,31 @@ export function useMap({
         cluster: true,
         clusterMaxZoom: 14,
         clusterRadius: 50,
+      });
+      map.addSource("user-location-radius", {
+        type: "geojson",
+        data: {
+          type: "FeatureCollection",
+          features: [],
+        },
+      });
+      map.addLayer({
+        id: "user-location-radius-fill",
+        type: "fill",
+        source: "user-location-radius",
+        paint: {
+          "fill-color": "#3388ff",
+          "fill-opacity": 0.15,
+        },
+      });
+      map.addLayer({
+        id: "user-location-radius-line",
+        type: "line",
+        source: "user-location-radius",
+        paint: {
+          "line-color": "#3388ff",
+          "line-width": 2,
+        },
       });
 
       map.addControl(
