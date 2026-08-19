@@ -32,3 +32,49 @@ export function getCurrentLocation(): Promise<UserLocation> {
     );
   });
 }
+
+function degreesToRadians(degrees: number): number {
+  return (degrees * Math.PI) / 180;
+}
+
+function calculateDistance(
+  latitude1: number,
+  longitude1: number,
+  latitude2: number,
+  longitude2: number,
+
+): number {
+  const deltaLatitude = latitude2 - latitude1;
+  const deltaLongitude = longitude2 - longitude1;
+
+  const deltaLatitudeRadians = degreesToRadians(deltaLatitude);
+  const deltaLongitudeRadians = degreesToRadians(deltaLongitude);
+
+  const a =
+    Math.sin(deltaLatitudeRadians / 2) ** 2 +
+    Math.cos(degreesToRadians(latitude1)) *
+      Math.cos(degreesToRadians(latitude2)) *
+      Math.sin(deltaLongitudeRadians / 2) ** 2;
+
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+  const earthRadius = 6371000;
+  const distance = earthRadius * c;
+
+  return distance;
+}
+
+const latitude1 = 47.7986;
+const longitude1 = 3.5684;
+
+const latitude2 = 47.7988;
+const longitude2 = 3.5686;
+
+const distance = calculateDistance(
+  latitude1,
+  longitude1,
+  latitude2,
+  longitude2,
+);
+
+console.log(distance);
