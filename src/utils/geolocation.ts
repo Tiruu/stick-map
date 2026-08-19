@@ -33,6 +33,24 @@ export function getCurrentLocation(): Promise<UserLocation> {
   });
 }
 
+export function watchUserLocation(
+  onLocationUpdate: (location: UserLocation) => void,
+) {
+  return navigator.geolocation.watchPosition(
+    (position) => {
+      const currentLat = position.coords.latitude;
+      const currentLong = position.coords.longitude;
+      const currentAccuracy = position.coords.accuracy;
+
+      onLocationUpdate({
+        latitude: currentLat,
+        longitude: currentLong,
+        accuracy: currentAccuracy,
+      });
+    },
+  );
+}
+
 function degreesToRadians(degrees: number): number {
   return (degrees * Math.PI) / 180;
 }
@@ -63,18 +81,3 @@ function calculateDistance(
 
   return distance;
 }
-
-const latitude1 = 47.7986;
-const longitude1 = 3.5684;
-
-const latitude2 = 47.7988;
-const longitude2 = 3.5686;
-
-const distance = calculateDistance(
-  latitude1,
-  longitude1,
-  latitude2,
-  longitude2,
-);
-
-console.log(distance);
