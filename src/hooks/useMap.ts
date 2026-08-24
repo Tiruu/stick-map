@@ -104,9 +104,17 @@ export function useMap({
     if (!map || !userLocation || !isMapLoaded) {
       return;
     }
+    const playerMarker = document.createElement("div");
+    playerMarker.className = "player-location-marker";
+
     if (!userLocationMarkerRef.current) {
-      userLocationMarkerRef.current = new Marker()
-        .setLngLat([userLocation.longitude, userLocation.latitude])
+      userLocationMarkerRef.current = new Marker({
+        element: playerMarker,
+      })
+        .setLngLat([
+          userLocation.longitude,
+          userLocation.latitude,
+        ])
         .addTo(map);
     } else {
       userLocationMarkerRef.current.setLngLat([
