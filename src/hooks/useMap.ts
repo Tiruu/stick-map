@@ -424,7 +424,7 @@ export function useMap({
       map.remove();
       mapRef.current = null;
     };
-  }, [mapContainer]);
+  }, [mapContainer, userLocation]);
 
   useEffect(() => {
     const map = mapRef.current;
