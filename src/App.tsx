@@ -72,6 +72,7 @@ function App() {
     saveStick,
     confirmStick,
     isConfirmingStick,
+    isReportingStick,
     reportMissingStick,
     deleteStickById,
   } = useSticks({
@@ -625,6 +626,7 @@ function App() {
           }}
           onConfirm={() => confirmStick(selectedStick.id)}
           isConfirmingStick={isConfirmingStick}
+          isReportingStick={isReportingStick}
           onReportMissing={() => reportMissingStick(selectedStick.id)}
           isAdmin={isAdmin}
           onDelete={handleDeleteSelectedStick}

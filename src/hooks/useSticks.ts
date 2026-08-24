@@ -50,6 +50,7 @@ export function useSticks({ user, isAdmin, onError, }: UseSticksOptions) {
 
   const [confirmations, setConfirmations] = useState<StickConfirmation[]>([]);
   const [isConfirmingStick, setIsConfirmingStick] = useState(false);
+  const [isReportingStick, setIsReportingStick] = useState(false);
 
   const [reports, setReports] = useState<StickReport[]>([]);
 
@@ -170,6 +171,8 @@ export function useSticks({ user, isAdmin, onError, }: UseSticksOptions) {
         return;
       }
 
+      setIsReportingStick(true);
+
       try {
         const location = await getCurrentLocation();
 
@@ -185,6 +188,8 @@ export function useSticks({ user, isAdmin, onError, }: UseSticksOptions) {
         console.error("Erreur signalement :", error);
 
         onError(getActionErrorMessage(error));
+      } finally {
+        setIsReportingStick(false);
       }
     },
     [user, loadReports, loadStickStatuses, onError],
@@ -236,6 +241,7 @@ export function useSticks({ user, isAdmin, onError, }: UseSticksOptions) {
     saveStick,
     confirmStick,
     isConfirmingStick,
+    isReportingStick,
     reportMissingStick,
     deleteStickById,
   };
