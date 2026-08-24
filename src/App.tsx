@@ -91,6 +91,8 @@ function App() {
   const [showRanking, setShowRanking] = useState(false);
   const [showFriends, setShowFriends] = useState(false);
   const [userLocation, setUserLocation] = useState<UserLocation | null>(null);
+  const [rankingMode, setRankingMode] = useState<"all" | "friends">("all");
+
   const {
     friendships,
     friendProfiles,
@@ -173,6 +175,13 @@ function App() {
       console.error("Erreur recherche utilisateur :", error);
     }
   }
+
+  const friendsRanking = ranking.filter((entry) => {
+    return friendProfiles.some((friend) => {
+      return friend.id === entry.user_id;
+    });
+  });
+  const displayedRanking = rankingMode === "friends" ? friendsRanking : ranking;
 
   async function loadLastActivityAuthor(
   confirmations: StickConfirmation[],
@@ -597,8 +606,12 @@ function App() {
             >
               ✕
             </button>
-
-            <Ranking ranking={ranking} onSelectUser={openPublicProfile} />
+            <Ranking
+              ranking={displayedRanking}
+              mode={rankingMode}
+              onModeChange={setRankingMode}
+              onSelectUser={openPublicProfile}
+            />
           </div>
         </div>
       )}

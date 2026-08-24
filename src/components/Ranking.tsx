@@ -7,6 +7,8 @@ type RankingProps = {
   onSelectUser: (userId: string) => void;
 };
 
+
+
 export default function Ranking({
   ranking,
   mode = "all",
