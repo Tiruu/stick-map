@@ -1,6 +1,8 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { supabase } from "./supabase";
 import { Turnstile } from "@marsidev/react-turnstile";
+import type { TurnstileInstance } from "@marsidev/react-turnstile";
+
 
 export default function Auth() {
   const [email, setEmail] = useState("");
@@ -10,6 +12,7 @@ export default function Auth() {
   const [isLogin, setIsLogin] = useState(true);
   const [message, setMessage] = useState("");
 
+  const turnstileRef = useRef<TurnstileInstance | null>(null);
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
 
   async function handleSubmit() {
@@ -26,6 +29,7 @@ export default function Auth() {
 
       if (error) {
         setCaptchaToken(null);
+        turnstileRef.current?.reset();
         setMessage(error.message);
         return;
       }
@@ -45,6 +49,7 @@ export default function Auth() {
 
       if (error) {
         setCaptchaToken(null);
+        turnstileRef.current?.reset();
         setMessage(error.message);
         return;
       }
@@ -83,6 +88,7 @@ export default function Auth() {
       />
 
       <Turnstile
+        ref={turnstileRef}
         siteKey={import.meta.env.VITE_TURNSTILE_SITE_KEY}
         onSuccess={(token) => {
           setCaptchaToken(token);
