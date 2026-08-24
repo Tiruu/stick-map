@@ -51,6 +51,31 @@ export function useMap({
     markerRef.current = null;
   };
   const onAddLocationRef = useRef(onAddLocation);
+  const updateUserLocationCircle = (
+    map: Map,
+    location: UserLocation,
+  ) => {
+    const radius = 0.03;
+
+    const locationCircle = circle(
+      [location.longitude, location.latitude],
+      radius,
+      {
+        steps: 64,
+        units: "kilometers",
+      },
+    );
+
+    const source = map.getSource(
+      "user-location-radius",
+    ) as GeoJSONSource | undefined;
+
+    if (!source) {
+      return;
+    }
+
+    source.setData(locationCircle);
+  };
 
   useEffect(() => {
     sticksRef.current = sticks;
@@ -70,7 +95,6 @@ export function useMap({
 
   useEffect(() => {
     const map = mapRef.current;
-    const radius = 0.03;
 
     if (!map || !userLocation) {
       return;
@@ -85,22 +109,7 @@ export function useMap({
         userLocation.latitude,
       ]);
     }
-    const locationCircle = circle(
-      [userLocation.longitude, userLocation.latitude],
-      radius,
-      {
-        steps: 64,
-        units: "kilometers",
-      },
-    );
-    const source = map.getSource("user-location-radius") as
-      GeoJSONSource | undefined;
-
-    if (!source) {
-      return;
-    }
-
-    source.setData(locationCircle);
+    updateUserLocationCircle(map, userLocation);
   }, [userLocation]);
 
   useEffect(() => {
@@ -208,6 +217,9 @@ export function useMap({
           "line-width": 2,
         },
       });
+      if (userLocation) {
+        updateUserLocationCircle(map, userLocation);
+      }
 
       map.addControl(
         new GeolocateControl({
