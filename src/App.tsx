@@ -171,45 +171,50 @@ function App() {
   }
 
   async function loadLastActivityAuthor(
-    confirmations: StickConfirmation[],
-    reports: StickReport[],
-  ) {
-    const latestConfirmation = confirmations[0];
-    const latestReport = reports[0];
+  confirmations: StickConfirmation[],
+  reports: StickReport[],
+) {
+  const latestConfirmation = confirmations[0];
+  const latestReport = reports[0];
 
-    if (!latestConfirmation && !latestReport) {
-      setLastActivityAuthor(null);
-      return;
-    }
-
-    let userId: string;
-
-    if (latestConfirmation && !latestReport) {
-      userId = latestConfirmation.user_id;
-    } else if (!latestReport && latestConfirmation) {
-      userId = latestConfirmation.user_id;
-    } else {
-      const confirmationDate = new Date(
-        latestConfirmation.updated_at,
-      ).getTime();
-
-      const reportDate = new Date(latestReport.updated_at).getTime();
-
-      userId =
-        confirmationDate > reportDate
-          ? latestConfirmation.user_id
-          : latestReport.user_id;
-    }
-
-    try {
-      const data = await getProfile(userId);
-      setLastActivityAuthor(data);
-    } catch (error) {
-      console.error("Erreur chargement auteur dernière activité :", error);
-
-      setLastActivityAuthor(null);
-    }
+  if (!latestConfirmation && !latestReport) {
+    setLastActivityAuthor(null);
+    return;
   }
+
+  let userId: string;
+
+  if (latestConfirmation && !latestReport) {
+    userId = latestConfirmation.user_id;
+  } else if (!latestConfirmation && latestReport) {
+    userId = latestReport.user_id;
+  } else if (latestConfirmation && latestReport) {
+    const confirmationDate = new Date(
+      latestConfirmation.updated_at,
+    ).getTime();
+
+    const reportDate = new Date(
+      latestReport.updated_at,
+    ).getTime();
+
+    userId =
+      confirmationDate > reportDate
+        ? latestConfirmation.user_id
+        : latestReport.user_id;
+  } else {
+    setLastActivityAuthor(null);
+    return;
+  }
+
+  try {
+    const data = await getProfile(userId);
+    setLastActivityAuthor(data);
+  } catch (error) {
+    console.error("Erreur chargement auteur dernière activité :", error);
+
+    setLastActivityAuthor(null);
+  }
+}
 
   async function loadStickHistory(stickId: string) {
     try {
