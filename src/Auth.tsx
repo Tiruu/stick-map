@@ -25,6 +25,7 @@ export default function Auth() {
       });
 
       if (error) {
+        setCaptchaToken(null);
         setMessage(error.message);
         return;
       }
@@ -43,6 +44,7 @@ export default function Auth() {
       });
 
       if (error) {
+        setCaptchaToken(null);
         setMessage(error.message);
         return;
       }
