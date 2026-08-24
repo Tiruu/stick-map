@@ -47,6 +47,7 @@ function App() {
   const [showValidation, setShowValidation] = useState(false);
   const [showAdminModeration, setShowAdminModeration] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [isSavingStick, setIsSavingStick] = useState(false);
   const {
     pendingSticks,
     reviewSticks,
@@ -350,28 +351,34 @@ function App() {
   }
 
   async function handleSaveStick() {
-    if (!draftStick || !photo || !originType) {
+    if (!draftStick || !photo || !originType || isSavingStick) {
       return;
     }
 
-    const newStick = await saveStick({
-      latitude: draftStick.lat,
-      longitude: draftStick.lng,
-      description,
-      photo,
-      originType,
-    });
+    setIsSavingStick(true);
+    
+    try {
+      const newStick = await saveStick({
+        latitude: draftStick.lat,
+        longitude: draftStick.lng,
+        description,
+        photo,
+        originType,
+      });
 
-    if (!newStick) {
-      return;
+      if (!newStick) {
+        return;
+      }
+
+      clearAddMarker();
+
+      setDraftStick(null);
+      setDescription("");
+      setPhoto(null);
+      setOriginType(null);
+    } finally {
+      setIsSavingStick(false);
     }
-
-    clearAddMarker();
-
-    setDraftStick(null);
-    setDescription("");
-    setPhoto(null);
-    setOriginType(null);
   }
 
   function confirmDraftLocation() {
