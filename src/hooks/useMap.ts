@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import {
   Map,
@@ -46,6 +46,8 @@ export function useMap({
   const onStickClickRef = useRef(onStickClick);
   const markerRef = useRef<Marker | null>(null);
   const userLocationMarkerRef = useRef<Marker | null>(null);
+  const [isMapLoaded, setIsMapLoaded] = useState(false);
+
   const clearAddMarker = () => {
     markerRef.current?.remove();
     markerRef.current = null;
@@ -96,7 +98,7 @@ export function useMap({
   useEffect(() => {
     const map = mapRef.current;
 
-    if (!map || !userLocation) {
+    if (!map || !userLocation || !isMapLoaded) {
       return;
     }
     if (!userLocationMarkerRef.current) {
@@ -110,7 +112,7 @@ export function useMap({
       ]);
     }
     updateUserLocationCircle(map, userLocation);
-  }, [userLocation]);
+  }, [userLocation, isMapLoaded]);
 
   useEffect(() => {
     if (!mapContainer.current) {
@@ -217,9 +219,6 @@ export function useMap({
           "line-width": 2,
         },
       });
-      if (userLocation) {
-        updateUserLocationCircle(map, userLocation);
-      }
 
       map.addControl(
         new GeolocateControl({
@@ -325,6 +324,7 @@ export function useMap({
           "circle-stroke-color": MAP_COLORS.white,
         },
       });
+      setIsMapLoaded(true);
     });
 
     map.on("click", "stick-points", (event) => {
@@ -424,7 +424,7 @@ export function useMap({
       map.remove();
       mapRef.current = null;
     };
-  }, [mapContainer, userLocation]);
+  }, [mapContainer]);
 
   useEffect(() => {
     const map = mapRef.current;
