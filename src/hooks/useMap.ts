@@ -19,6 +19,7 @@ import type { Stick, StickStatus } from "../types";
 import { sticksToGeoJSON } from "../utils/sticksGeoJSON";
 import { MAP_COLORS } from "../utils/mapColors";
 import type { UserLocation } from "../utils/geolocation";
+import type { DraftLocation } from "../types";
 import circle from "@turf/circle";
 
 type UseMapOptions = {
@@ -29,6 +30,7 @@ type UseMapOptions = {
   userLocation: UserLocation | null;
   onStickClick: (stick: Stick) => void;
   onAddLocation: (longitude: number, latitude: number) => void;
+  draftLocation: DraftLocation | null;
 };
 
 export function useMap({
@@ -39,6 +41,7 @@ export function useMap({
   userLocation,
   onStickClick,
   onAddLocation,
+  draftLocation,
 }: UseMapOptions) {
   const mapRef = useRef<Map | null>(null);
   const sticksRef = useRef<Stick[]>(sticks);
@@ -441,6 +444,16 @@ export function useMap({
 
     map.getCanvas().style.cursor = "crosshair";
 
+    if (draftLocation){
+      const {lng, lat} = draftLocation;
+
+      if (markerRef.current) {
+        markerRef.current.setLngLat([lng, lat]);
+      } else {
+        markerRef.current = new Marker().setLngLat([lng, lat]).addTo(map);
+      }
+    }
+
     const handleClick = (event: MapMouseEvent) => {
       const { lng, lat } = event.lngLat;
 
@@ -458,7 +471,7 @@ export function useMap({
     return () => {
       map.off("click", handleClick);
     };
-  }, [addMode]);
+  }, [addMode, draftLocation]);
 
   useEffect(() => {
     const map = mapRef.current;

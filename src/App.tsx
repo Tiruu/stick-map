@@ -124,6 +124,7 @@ function App() {
         lat: latitude,
       });
     },
+    draftLocation,
   });
 
   useEffect(() => {
