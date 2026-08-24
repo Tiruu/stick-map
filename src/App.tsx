@@ -71,6 +71,7 @@ function App() {
     stickStatuses,
     saveStick,
     confirmStick,
+    isConfirmingStick,
     reportMissingStick,
     deleteStickById,
   } = useSticks({
@@ -623,6 +624,7 @@ function App() {
             setSelectedAuthor(null);
           }}
           onConfirm={() => confirmStick(selectedStick.id)}
+          isConfirmingStick={isConfirmingStick}
           onReportMissing={() => reportMissingStick(selectedStick.id)}
           isAdmin={isAdmin}
           onDelete={handleDeleteSelectedStick}

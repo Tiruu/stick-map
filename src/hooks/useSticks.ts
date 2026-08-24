@@ -49,6 +49,7 @@ export function useSticks({ user, isAdmin, onError, }: UseSticksOptions) {
   >({});
 
   const [confirmations, setConfirmations] = useState<StickConfirmation[]>([]);
+  const [isConfirmingStick, setIsConfirmingStick] = useState(false);
 
   const [reports, setReports] = useState<StickReport[]>([]);
 
@@ -130,7 +131,7 @@ export function useSticks({ user, isAdmin, onError, }: UseSticksOptions) {
         return null;
       }
     },
-    [user],
+    [user, onError],
   );
 
   const confirmStick = useCallback(
@@ -139,16 +140,10 @@ export function useSticks({ user, isAdmin, onError, }: UseSticksOptions) {
         return;
       }
 
+      setIsConfirmingStick(true);
+
       try {
         const location = await getCurrentLocation();
-
-        console.log("Position utilisée :", {
-          latitude: location.latitude,
-          longitude: location.longitude,
-          accuracy: location.accuracy,
-        });
-
-        console.log("Stick :", stickId);
 
         await confirmStickPresence(
           stickId,
@@ -162,9 +157,11 @@ export function useSticks({ user, isAdmin, onError, }: UseSticksOptions) {
         console.error("Erreur confirmation :", error);
 
         onError(getActionErrorMessage(error));
+      } finally {
+        setIsConfirmingStick(false);
       }
     },
-    [user, loadConfirmations, loadStickStatuses],
+    [user, loadConfirmations, loadStickStatuses, onError,],
   );
 
   const reportMissingStick = useCallback(
@@ -190,7 +187,7 @@ export function useSticks({ user, isAdmin, onError, }: UseSticksOptions) {
         onError(getActionErrorMessage(error));
       }
     },
-    [user, loadReports, loadStickStatuses],
+    [user, loadReports, loadStickStatuses, onError],
   );
 
   const deleteStickById = useCallback(
@@ -217,6 +214,7 @@ export function useSticks({ user, isAdmin, onError, }: UseSticksOptions) {
   );
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     loadSticks();
     loadStickStatuses();
   }, [loadSticks, loadStickStatuses]);
@@ -237,6 +235,7 @@ export function useSticks({ user, isAdmin, onError, }: UseSticksOptions) {
 
     saveStick,
     confirmStick,
+    isConfirmingStick,
     reportMissingStick,
     deleteStickById,
   };
