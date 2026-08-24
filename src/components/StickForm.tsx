@@ -7,6 +7,8 @@ type StickFormProps = {
   photo: File | null;
   originType: StickOrigin | null;
 
+  isSavingStick: boolean;
+
   onDescriptionChange: (value: string) => void;
   onPhotoChange: (file: File | null) => void;
   onOriginTypeChange: (value: StickOrigin) => void;
@@ -20,6 +22,7 @@ export default function StickForm({
   description,
   photo,
   originType,
+  isSavingStick,
   onDescriptionChange,
   onPhotoChange,
   onOriginTypeChange,
@@ -129,8 +132,11 @@ export default function StickForm({
       <div className="form-buttons">
         <button onClick={onCancel}>Annuler</button>
 
-        <button onClick={onSave} disabled={!photo || !originType}>
-          Ajouter
+        <button
+          onClick={onSave}
+          disabled={!photo || !originType || isSavingStick}
+        >
+          {isSavingStick ? "Ajout en cours..." : "Ajouter"}
         </button>
       </div>
     </div>

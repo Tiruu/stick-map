@@ -356,7 +356,7 @@ function App() {
     }
 
     setIsSavingStick(true);
-    
+
     try {
       const newStick = await saveStick({
         latitude: draftStick.lat,
@@ -596,6 +596,7 @@ function App() {
           description={description}
           photo={photo}
           originType={originType}
+          isSavingStick={isSavingStick}
           onDescriptionChange={setDescription}
           onPhotoChange={setPhoto}
           onOriginTypeChange={setOriginType}
