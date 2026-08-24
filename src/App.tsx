@@ -423,7 +423,17 @@ function App() {
       )}
       <button
         className="add-stick-button"
-        onClick={() => setAddMode(true)}
+        onClick={() => {
+          if (!userLocation) {
+            setAddMode(true);
+          } else {
+            setDraftLocation({
+              lng: userLocation.longitude,
+              lat: userLocation.latitude,
+            });
+            setAddMode(true);
+          }
+        }}
         disabled={!user}
       >
         + Ajouter un stick
