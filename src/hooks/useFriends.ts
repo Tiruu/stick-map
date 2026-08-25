@@ -88,6 +88,7 @@ export function useFriends(
   );
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     loadFriends();
   }, [loadFriends]);
 

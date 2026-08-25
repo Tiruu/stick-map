@@ -134,14 +134,15 @@ export function useModeration({
   );
 
   useEffect(() => {
-    if (user) {
-      loadPendingSticks(user.id);
-    } else {
-      setPendingSticks([]);
+    if (!user) {
+      return;
     }
+
+    loadPendingSticks(user.id);
   }, [user, loadPendingSticks]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     loadReviewSticks();
   }, [loadReviewSticks]);
 

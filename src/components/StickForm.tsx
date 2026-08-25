@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo } from "react";
 import type { DraftStick, StickOrigin } from "../types";
 
 type StickFormProps = {
@@ -29,22 +29,23 @@ export default function StickForm({
   onSave,
   onCancel,
 }: StickFormProps) {
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const previewUrl = useMemo(() => {
+    if (!photo) {
+      return null;
+    }
+
+    return URL.createObjectURL(photo);
+  }, [photo]);
 
   useEffect(() => {
-    if (!photo) {
-      setPreviewUrl(null);
+    if (!previewUrl) {
       return;
     }
 
-    const url = URL.createObjectURL(photo);
-
-    setPreviewUrl(url);
-
     return () => {
-      URL.revokeObjectURL(url);
+      URL.revokeObjectURL(previewUrl);
     };
-  }, [photo]);
+  }, [previewUrl]);
 
   return (
     <div className="stick-form">
