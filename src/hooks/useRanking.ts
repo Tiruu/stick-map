@@ -16,7 +16,11 @@ export function useRanking() {
   }, []);
 
   useEffect(() => {
-    loadRanking();
+    async function load() {
+      await loadRanking();
+    }
+
+    void load();
   }, [loadRanking]);
 
   return {

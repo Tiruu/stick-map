@@ -138,7 +138,13 @@ export function useModeration({
       return;
     }
 
-    loadPendingSticks(user.id);
+    const userId = user.id;
+
+    async function load() {
+      await loadPendingSticks(userId);
+    }
+
+    void load();
   }, [user, loadPendingSticks]);
 
   useEffect(() => {
