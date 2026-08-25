@@ -24,7 +24,11 @@ type UseModerationOptions = {
   onError: (message: string) => void;
 };
 
-export function useModeration({ user, isAdmin, onError, }: UseModerationOptions) {
+export function useModeration({
+  user,
+  isAdmin,
+  onError,
+}: UseModerationOptions) {
   const [pendingSticks, setPendingSticks] = useState<Stick[]>([]);
 
   const [reviewSticks, setReviewSticks] = useState<Stick[]>([]);

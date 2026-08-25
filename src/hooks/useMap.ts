@@ -56,10 +56,7 @@ export function useMap({
     markerRef.current = null;
   };
   const onAddLocationRef = useRef(onAddLocation);
-  const updateUserLocationCircle = (
-    map: Map,
-    location: UserLocation,
-  ) => {
+  const updateUserLocationCircle = (map: Map, location: UserLocation) => {
     const radius = 0.03;
 
     const locationCircle = circle(
@@ -71,9 +68,8 @@ export function useMap({
       },
     );
 
-    const source = map.getSource(
-      "user-location-radius",
-    ) as GeoJSONSource | undefined;
+    const source = map.getSource("user-location-radius") as
+      GeoJSONSource | undefined;
 
     if (!source) {
       return;
@@ -111,10 +107,7 @@ export function useMap({
       userLocationMarkerRef.current = new Marker({
         element: playerMarker,
       })
-        .setLngLat([
-          userLocation.longitude,
-          userLocation.latitude,
-        ])
+        .setLngLat([userLocation.longitude, userLocation.latitude])
         .addTo(map);
     } else {
       userLocationMarkerRef.current.setLngLat([
@@ -452,8 +445,8 @@ export function useMap({
 
     map.getCanvas().style.cursor = "crosshair";
 
-    if (draftLocation){
-      const {lng, lat} = draftLocation;
+    if (draftLocation) {
+      const { lng, lat } = draftLocation;
 
       if (markerRef.current) {
         markerRef.current.setLngLat([lng, lat]);

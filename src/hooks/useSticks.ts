@@ -41,7 +41,7 @@ type UseSticksOptions = {
   onError: (message: string) => void;
 };
 
-export function useSticks({ user, isAdmin, onError, }: UseSticksOptions) {
+export function useSticks({ user, isAdmin, onError }: UseSticksOptions) {
   const [sticks, setSticks] = useState<Stick[]>([]);
 
   const [stickStatuses, setStickStatuses] = useState<
@@ -162,7 +162,7 @@ export function useSticks({ user, isAdmin, onError, }: UseSticksOptions) {
         setIsConfirmingStick(false);
       }
     },
-    [user, loadConfirmations, loadStickStatuses, onError,],
+    [user, loadConfirmations, loadStickStatuses, onError],
   );
 
   const reportMissingStick = useCallback(
@@ -223,7 +223,7 @@ export function useSticks({ user, isAdmin, onError, }: UseSticksOptions) {
     loadSticks();
     loadStickStatuses();
   }, [loadSticks, loadStickStatuses]);
-  
+
   return {
     sticks,
     setSticks,

@@ -7,8 +7,6 @@ type RankingProps = {
   onSelectUser: (userId: string) => void;
 };
 
-
-
 export default function Ranking({
   ranking,
   mode = "all",
@@ -16,7 +14,7 @@ export default function Ranking({
   onSelectUser,
 }: RankingProps) {
   return (
-    <div className="ranking-content">
+    <div className="ranking-content">5
       <h2>🏆 Contributeurs</h2>
 
       <div className="ranking-tabs">

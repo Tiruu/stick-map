@@ -9,7 +9,15 @@ import "@maplibre/maplibre-gl-geocoder/dist/maplibre-gl-geocoder.css";
 import "./App.css";
 import { supabase } from "./supabase";
 import Auth from "./Auth";
-import type { DraftStick, Stick, Profile, StickOrigin, StickConfirmation, StickReport, DraftLocation, } from "./types";
+import type {
+  DraftStick,
+  Stick,
+  Profile,
+  StickOrigin,
+  StickConfirmation,
+  StickReport,
+  DraftLocation,
+} from "./types";
 import Ranking from "./components/Ranking";
 import UserPanel from "./components/UserPanel";
 import ProfilePanel from "./components/ProfilePanel";
@@ -41,7 +49,9 @@ function App() {
   const [userSticks, setUserSticks] = useState<Stick[]>([]);
   const isAdmin = profile?.role === "admin";
   const [selectedAuthor, setSelectedAuthor] = useState<Profile | null>(null);
-  const [lastActivityAuthor, setLastActivityAuthor] = useState<Profile | null>(null,);
+  const [lastActivityAuthor, setLastActivityAuthor] = useState<Profile | null>(
+    null,
+  );
   const [confirmations, setConfirmations] = useState<StickConfirmation[]>([]);
   const [reports, setReports] = useState<StickReport[]>([]);
   const [showValidation, setShowValidation] = useState(false);
@@ -83,7 +93,9 @@ function App() {
   const mapContainer = useRef<HTMLDivElement>(null);
   const [addMode, setAddMode] = useState(false);
   const [draftStick, setDraftStick] = useState<DraftStick | null>(null);
-  const [draftLocation, setDraftLocation] = useState<DraftLocation | null>(null);
+  const [draftLocation, setDraftLocation] = useState<DraftLocation | null>(
+    null,
+  );
   const [selectedStick, setSelectedStick] = useState<Stick | null>(null);
   const [description, setDescription] = useState("");
   const [photo, setPhoto] = useState<File | null>(null);
@@ -184,50 +196,48 @@ function App() {
   const displayedRanking = rankingMode === "friends" ? friendsRanking : ranking;
 
   async function loadLastActivityAuthor(
-  confirmations: StickConfirmation[],
-  reports: StickReport[],
-) {
-  const latestConfirmation = confirmations[0];
-  const latestReport = reports[0];
+    confirmations: StickConfirmation[],
+    reports: StickReport[],
+  ) {
+    const latestConfirmation = confirmations[0];
+    const latestReport = reports[0];
 
-  if (!latestConfirmation && !latestReport) {
-    setLastActivityAuthor(null);
-    return;
+    if (!latestConfirmation && !latestReport) {
+      setLastActivityAuthor(null);
+      return;
+    }
+
+    let userId: string;
+
+    if (latestConfirmation && !latestReport) {
+      userId = latestConfirmation.user_id;
+    } else if (!latestConfirmation && latestReport) {
+      userId = latestReport.user_id;
+    } else if (latestConfirmation && latestReport) {
+      const confirmationDate = new Date(
+        latestConfirmation.updated_at,
+      ).getTime();
+
+      const reportDate = new Date(latestReport.updated_at).getTime();
+
+      userId =
+        confirmationDate > reportDate
+          ? latestConfirmation.user_id
+          : latestReport.user_id;
+    } else {
+      setLastActivityAuthor(null);
+      return;
+    }
+
+    try {
+      const data = await getProfile(userId);
+      setLastActivityAuthor(data);
+    } catch (error) {
+      console.error("Erreur chargement auteur dernière activité :", error);
+
+      setLastActivityAuthor(null);
+    }
   }
-
-  let userId: string;
-
-  if (latestConfirmation && !latestReport) {
-    userId = latestConfirmation.user_id;
-  } else if (!latestConfirmation && latestReport) {
-    userId = latestReport.user_id;
-  } else if (latestConfirmation && latestReport) {
-    const confirmationDate = new Date(
-      latestConfirmation.updated_at,
-    ).getTime();
-
-    const reportDate = new Date(
-      latestReport.updated_at,
-    ).getTime();
-
-    userId =
-      confirmationDate > reportDate
-        ? latestConfirmation.user_id
-        : latestReport.user_id;
-  } else {
-    setLastActivityAuthor(null);
-    return;
-  }
-
-  try {
-    const data = await getProfile(userId);
-    setLastActivityAuthor(data);
-  } catch (error) {
-    console.error("Erreur chargement auteur dernière activité :", error);
-
-    setLastActivityAuthor(null);
-  }
-}
 
   async function loadStickHistory(stickId: string) {
     try {

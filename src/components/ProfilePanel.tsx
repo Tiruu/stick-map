@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 
 import type { Profile, Stick, RankingEntry, Friendship } from "../types";
 
@@ -44,10 +44,14 @@ export default function ProfilePanel({
     Record<string, Profile>
   >({});
 
-  const incomingRequests = friendships.filter(
-    (friendship) =>
-      friendship.addressee_id === profile.id && friendship.status === "pending",
-  );
+  const incomingRequests = useMemo(() => {
+    return friendships.filter(
+      (friendship) =>
+        friendship.addressee_id === profile.id &&
+        friendship.status === "pending",
+      );
+    }, [friendships, profile.id]);
+  
 
   const rankIndex = ranking.findIndex((entry) => entry.user_id === profile.id);
 
@@ -84,7 +88,7 @@ export default function ProfilePanel({
     return () => {
       cancelled = true;
     };
-  }, [friendships, profile.id]);
+  }, [incomingRequests]);
 
   async function saveUsername() {
     const trimmedUsername = username.trim();

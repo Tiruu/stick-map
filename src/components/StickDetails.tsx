@@ -11,7 +11,7 @@ type StickDetailsProps = {
 
   onClose: () => void;
   onConfirm: () => void;
-  
+
   isConfirmingStick: boolean;
   isReportingStick: boolean;
 
@@ -200,11 +200,22 @@ export default function StickDetails({
       {currentUserId && (
         <div className="stick-actions">
           <button onClick={onConfirm} disabled={isOwner || isConfirmingStick}>
-            {isOwner ? "Tu ne peux valider ton stick."  : isConfirmingStick ? "Patientez..." : "✅ Je l'ai vu !"}
+            {isOwner
+              ? "Tu ne peux valider ton stick."
+              : isConfirmingStick
+                ? "Patientez..."
+                : "✅ Je l'ai vu !"}
           </button>
 
-          <button onClick={onReportMissing} disabled={isOwner || isReportingStick}>
-            {isOwner ? "Tu ne peux signaler ton stick." : isReportingStick ? "Patientez..." : "🚩 Il a disparu"}
+          <button
+            onClick={onReportMissing}
+            disabled={isOwner || isReportingStick}
+          >
+            {isOwner
+              ? "Tu ne peux signaler ton stick."
+              : isReportingStick
+                ? "Patientez..."
+                : "🚩 Il a disparu"}
           </button>
         </div>
       )}
