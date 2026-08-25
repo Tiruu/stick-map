@@ -205,9 +205,18 @@ export async function deleteStick(
   photoPath: string | null,
 ): Promise<void> {
   if (photoPath) {
+    console.log("Suppression photo :", {
+      bucket: "stick-photos",
+      path: photoPath,
+    });
     const { error: storageError } = await supabase.storage
       .from("stick-photos")
       .remove([photoPath]);
+
+    console.log("Résultat suppression photo :", {
+      path: photoPath,
+      error: storageError,
+    });
 
     if (storageError) {
       throw storageError;
