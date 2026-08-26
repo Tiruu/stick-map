@@ -20,7 +20,11 @@ export async function uploadStickPhoto(photo: File): Promise<string> {
   return filePath;
 }
 
-export function getStickPhotoUrl(path: string): string {
+export function getStickPhotoUrl(path: string | null): string | null {
+  if (!path) {
+    return null;
+  }
+
   const { data } = supabase.storage.from(BUCKET).getPublicUrl(path);
 
   return data.publicUrl;
