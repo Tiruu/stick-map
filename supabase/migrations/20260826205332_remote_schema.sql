@@ -1,0 +1,2 @@
+-- Remote schema snapshot pulled from Supabase on 2026-08-26.
+-- This file is intentionally a snapshot migration created by `supabase db pull`.
