@@ -226,12 +226,10 @@ export async function getReviewSticks(): Promise<Stick[]> {
 }
 
 export async function approveReviewedStick(stickId: string): Promise<void> {
-  const { error } = await supabase
-    .from("sticks")
-    .update({
-      moderation_status: "approved",
-    })
-    .eq("id", stickId);
+  const { error } = await supabase.rpc("moderate_reviewed_stick", {
+    p_stick_id: stickId,
+    p_status: "approved",
+  });
 
   if (error) {
     throw error;
@@ -239,12 +237,10 @@ export async function approveReviewedStick(stickId: string): Promise<void> {
 }
 
 export async function rejectReviewedStick(stickId: string): Promise<void> {
-  const { error } = await supabase
-    .from("sticks")
-    .update({
-      moderation_status: "rejected",
-    })
-    .eq("id", stickId);
+  const { error } = await supabase.rpc("moderate_reviewed_stick", {
+    p_stick_id: stickId,
+    p_status: "rejected",
+  });
 
   if (error) {
     throw error;
