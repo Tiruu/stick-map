@@ -142,24 +142,23 @@ export async function getStickStatuses(): Promise<Record<string, StickStatus>> {
   return statuses;
 }
 
-export async function deleteStick(
-  stickId: string,
-  photoPath: string | null,
-): Promise<void> {
+export async function deleteStick(stickId: string): Promise<void> {
+  const { data: photoPath, error } = await supabase.rpc("delete_stick_admin", {
+    p_stick_id: stickId,
+  });
+
+  if (error) {
+    throw error;
+  }
+
   if (photoPath) {
     const { error: storageError } = await supabase.storage
       .from("stick-photos")
-      .remove([photoPath]);
+      .remove([photoPath as string]);
 
     if (storageError) {
       throw storageError;
     }
-  }
-
-  const { error } = await supabase.from("sticks").delete().eq("id", stickId);
-
-  if (error) {
-    throw error;
   }
 }
 
