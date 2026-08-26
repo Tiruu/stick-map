@@ -163,6 +163,7 @@ function App() {
 
   return (
     <>
+      <div ref={mapContainer} className="map-container" />
       {!user && <button className="login-button" onClick={() => setShowAuth(true)}>Se connecter</button>}
       {showAuth && !user && <div className="auth-overlay"><Auth /></div>}
       {user && <UserPanel profile={profile} onLogout={logout} onOpenProfile={openProfile} />}
