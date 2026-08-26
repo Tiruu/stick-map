@@ -138,7 +138,7 @@ function App() {
 
   async function handleDeleteSelectedStick() {
     if (!selectedStick || !isAdmin) return;
-    const deleted = await deleteStickById(selectedStick.id, selectedStick.photo_path);
+    const deleted = await deleteStickById(selectedStick.id);
     if (!deleted) return;
     setSelectedStick(null); setSelectedAuthor(null); await loadRanking();
   }
