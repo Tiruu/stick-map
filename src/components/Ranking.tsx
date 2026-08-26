@@ -14,7 +14,7 @@ export default function Ranking({
   onSelectUser,
 }: RankingProps) {
   return (
-    <div className="ranking-content">5
+    <div className="ranking-content">
       <h2>🏆 Contributeurs</h2>
 
       <div className="ranking-tabs">
