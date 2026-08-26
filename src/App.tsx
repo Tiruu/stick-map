@@ -9,15 +9,7 @@ import "@maplibre/maplibre-gl-geocoder/dist/maplibre-gl-geocoder.css";
 import "./App.css";
 import { supabase } from "./supabase";
 import Auth from "./Auth";
-import type {
-  DraftStick,
-  Stick,
-  Profile,
-  StickOrigin,
-  StickConfirmation,
-  StickReport,
-  DraftLocation,
-} from "./types";
+import type { DraftStick, Stick, Profile, StickOrigin, StickConfirmation, StickReport, DraftLocation } from "./types";
 import Ranking from "./components/Ranking";
 import UserPanel from "./components/UserPanel";
 import ProfilePanel from "./components/ProfilePanel";
@@ -49,53 +41,19 @@ function App() {
   const [userSticks, setUserSticks] = useState<Stick[]>([]);
   const isAdmin = profile?.role === "admin";
   const [selectedAuthor, setSelectedAuthor] = useState<Profile | null>(null);
-  const [lastActivityAuthor, setLastActivityAuthor] = useState<Profile | null>(
-    null,
-  );
+  const [lastActivityAuthor, setLastActivityAuthor] = useState<Profile | null>(null);
   const [confirmations, setConfirmations] = useState<StickConfirmation[]>([]);
   const [reports, setReports] = useState<StickReport[]>([]);
   const [showValidation, setShowValidation] = useState(false);
   const [showAdminModeration, setShowAdminModeration] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [isSavingStick, setIsSavingStick] = useState(false);
-  const {
-    pendingSticks,
-    reviewSticks,
-
-    validationIndex,
-    setValidationIndex,
-
-    adminModerationIndex,
-    setAdminModerationIndex,
-
-    handleValidationVote,
-    handleAdminApproveStick,
-    handleAdminRejectStick,
-  } = useModeration({
-    user,
-    isAdmin,
-    onError: setToastMessage,
-  });
-  const {
-    sticks,
-    stickStatuses,
-    saveStick,
-    confirmStick,
-    isConfirmingStick,
-    isReportingStick,
-    reportMissingStick,
-    deleteStickById,
-  } = useSticks({
-    user,
-    isAdmin,
-    onError: setToastMessage,
-  });
+  const { pendingSticks, reviewSticks, validationIndex, setValidationIndex, adminModerationIndex, setAdminModerationIndex, handleValidationVote, handleAdminApproveStick, handleAdminRejectStick } = useModeration({ user, isAdmin, onError: setToastMessage });
+  const { sticks, stickStatuses, saveStick, confirmStick, isConfirmingStick, isReportingStick, reportMissingStick, deleteStickById } = useSticks({ user, isAdmin, onError: setToastMessage });
   const mapContainer = useRef<HTMLDivElement>(null);
   const [addMode, setAddMode] = useState(false);
   const [draftStick, setDraftStick] = useState<DraftStick | null>(null);
-  const [draftLocation, setDraftLocation] = useState<DraftLocation | null>(
-    null,
-  );
+  const [draftLocation, setDraftLocation] = useState<DraftLocation | null>(null);
   const [selectedStick, setSelectedStick] = useState<Stick | null>(null);
   const [description, setDescription] = useState("");
   const [photo, setPhoto] = useState<File | null>(null);
@@ -104,499 +62,206 @@ function App() {
   const [showFriends, setShowFriends] = useState(false);
   const [userLocation, setUserLocation] = useState<UserLocation | null>(null);
   const [rankingMode, setRankingMode] = useState<"all" | "friends">("all");
-
-  const {
-    friendships,
-    friendProfiles,
-    requesterProfiles,
-    pendingFriendRequests,
-    acceptFriend,
-    rejectFriend,
-  } = useFriends(user);
+  const { friendships, friendProfiles, requesterProfiles, pendingFriendRequests, acceptFriend, rejectFriend } = useFriends(user);
   const { ranking, loadRanking } = useRanking();
-  const {
-    publicProfile,
-    publicProfileFriendship,
-    openPublicProfile,
-    handleSendFriendRequest,
-    closePublicProfile,
-  } = usePublicProfile(user);
-  const { clearAddMarker } = useMap({
-    mapContainer,
-    sticks,
-    stickStatuses,
-    addMode,
-    userLocation,
-    onStickClick: (stick) => {
-      setSelectedStick(stick);
-      loadStickAuthor(stick.user_id);
-      loadStickHistory(stick.id);
-    },
-    onAddLocation: (longitude, latitude) => {
-      setDraftLocation({
-        lng: longitude,
-        lat: latitude,
-      });
-    },
-    draftLocation,
-  });
+  const { publicProfile, publicProfileFriendship, openPublicProfile, handleSendFriendRequest, closePublicProfile } = usePublicProfile(user);
+  const { clearAddMarker } = useMap({ mapContainer, sticks, stickStatuses, addMode, userLocation, onStickClick: (stick) => { setSelectedStick(stick); loadStickAuthor(stick.user_id); loadStickHistory(stick.id); }, onAddLocation: (longitude, latitude) => setDraftLocation({ lng: longitude, lat: latitude }), draftLocation });
 
-  useEffect(() => {
-    const watchId = watchUserLocation((location) => {
-      setUserLocation(location);
-    });
+  useEffect(() => { const watchId = watchUserLocation((location) => setUserLocation(location)); return () => navigator.geolocation.clearWatch(watchId); }, []);
 
-    return () => {
-      navigator.geolocation.clearWatch(watchId);
-    };
-  }, []);
-
-  async function openProfile() {
-    if (!user) {
-      return;
-    }
-    try {
-      const data = await getUserSticks(user.id);
-      setUserSticks(data);
-      setShowProfile(true);
-    } catch (error) {
-      console.error("Erreur chargement profil :", error);
-    }
-  }
+  async function openProfile() { if (!user) return; try { const data = await getUserSticks(user.id); setUserSticks(data); setShowProfile(true); } catch (error) { console.error("Erreur chargement profil :", error); } }
 
   async function handleFriendSearch(email: string) {
     if (!user) return;
-
     try {
       const result = await findUserByEmail(email);
-
-      if (!result) {
-        alert("Aucun utilisateur trouvé avec cet email.");
-        return;
-      }
-
-      if (result.id === user.id) {
-        alert("Tu ne peux pas t'ajouter toi-même.");
-        return;
-      }
-
+      if (!result) { alert("Aucun utilisateur trouvé avec cet email."); return; }
+      if (result.id === user.id) { alert("Tu ne peux pas t'ajouter toi-même."); return; }
       await openPublicProfile(result.id);
-
       setShowFriends(false);
-    } catch (error) {
-      console.error("Erreur recherche utilisateur :", error);
-    }
+    } catch (error) { console.error("Erreur recherche utilisateur :", error); }
   }
 
-  const friendsRanking = ranking.filter((entry) => {
-    return friendProfiles.some((friend) => {
-      return friend.id === entry.user_id;
-    });
-  });
+  const friendsRanking = ranking.filter((entry) => friendProfiles.some((friend) => friend.id === entry.user_id));
   const displayedRanking = rankingMode === "friends" ? friendsRanking : ranking;
 
-  async function loadLastActivityAuthor(
-    confirmations: StickConfirmation[],
-    reports: StickReport[],
-  ) {
+  async function loadLastActivityAuthor(confirmations: StickConfirmation[], reports: StickReport[]) {
     const latestConfirmation = confirmations[0];
     const latestReport = reports[0];
-
-    if (!latestConfirmation && !latestReport) {
-      setLastActivityAuthor(null);
-      return;
-    }
-
+    if (!latestConfirmation && !latestReport) { setLastActivityAuthor(null); return; }
     let userId: string;
-
-    if (latestConfirmation && !latestReport) {
-      userId = latestConfirmation.user_id;
-    } else if (!latestConfirmation && latestReport) {
-      userId = latestReport.user_id;
-    } else if (latestConfirmation && latestReport) {
-      const confirmationDate = new Date(
-        latestConfirmation.updated_at,
-      ).getTime();
-
+    if (latestConfirmation && !latestReport) userId = latestConfirmation.user_id;
+    else if (!latestConfirmation && latestReport) userId = latestReport.user_id;
+    else if (latestConfirmation && latestReport) {
+      const confirmationDate = new Date(latestConfirmation.updated_at).getTime();
       const reportDate = new Date(latestReport.updated_at).getTime();
-
-      userId =
-        confirmationDate > reportDate
-          ? latestConfirmation.user_id
-          : latestReport.user_id;
-    } else {
-      setLastActivityAuthor(null);
-      return;
-    }
-
-    try {
-      const data = await getProfile(userId);
-      setLastActivityAuthor(data);
-    } catch (error) {
-      console.error("Erreur chargement auteur dernière activité :", error);
-
-      setLastActivityAuthor(null);
-    }
+      userId = confirmationDate > reportDate ? latestConfirmation.user_id : latestReport.user_id;
+    } else { setLastActivityAuthor(null); return; }
+    try { setLastActivityAuthor(await getProfile(userId)); } catch (error) { console.error("Erreur chargement auteur dernière activité :", error); setLastActivityAuthor(null); }
   }
 
   async function loadStickHistory(stickId: string) {
     try {
-      const [confirmationsData, reportsData] = await Promise.all([
-        getConfirmations(stickId),
-        getReports(stickId),
-      ]);
-
-      setConfirmations(confirmationsData);
-      setReports(reportsData);
-
-      await loadLastActivityAuthor(confirmationsData, reportsData);
-    } catch (error) {
-      console.error("Erreur chargement historique stick :", error);
-
-      setConfirmations([]);
-      setReports([]);
-      setLastActivityAuthor(null);
-    }
+      const [confirmationsData, reportsData] = await Promise.all([getConfirmations(stickId), getReports(stickId)]);
+      setConfirmations(confirmationsData); setReports(reportsData); await loadLastActivityAuthor(confirmationsData, reportsData);
+    } catch (error) { console.error("Erreur chargement historique stick :", error); setConfirmations([]); setReports([]); setLastActivityAuthor(null); }
   }
 
   async function loadStickAuthor(userId: string | null) {
-    if (!userId) {
-      setSelectedAuthor(null);
-      return;
-    }
-
-    try {
-      const data = await getProfile(userId);
-      setSelectedAuthor(data);
-    } catch (error) {
-      console.error("Erreur chargement auteur :", error);
-      setSelectedAuthor(null);
-    }
+    if (!userId) { setSelectedAuthor(null); return; }
+    try { setSelectedAuthor(await getProfile(userId)); } catch (error) { console.error("Erreur chargement auteur :", error); setSelectedAuthor(null); }
   }
 
   useEffect(() => {
     let cancelled = false;
-
     async function initializeAuth() {
-      try {
-        const {
-          data: { user: currentUser },
-        } = await supabase.auth.getUser();
-
-        if (cancelled) {
-          return;
-        }
-
-        setUser(currentUser);
-      } catch (error) {
-        console.error("Erreur initialisation authentification :", error);
-      }
+      try { const { data: { user: currentUser } } = await supabase.auth.getUser(); if (!cancelled) setUser(currentUser); }
+      catch (error) { console.error("Erreur initialisation authentification :", error); }
     }
-
     initializeAuth();
-
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null);
-    });
-
-    return () => {
-      cancelled = true;
-      subscription.unsubscribe();
-    };
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => setUser(session?.user ?? null));
+    return () => { cancelled = true; subscription.unsubscribe(); };
   }, []);
 
   useEffect(() => {
     let cancelled = false;
-
     async function loadUserData() {
-      if (!user) {
-        setProfile(null);
-        return;
-      }
-
-      try {
-        const profileData = await getProfile(user.id);
-
-        if (cancelled) {
-          return;
-        }
-
-        setProfile(profileData);
-      } catch (error) {
-        console.error("Erreur chargement données utilisateur :", error);
-      }
+      if (!user) { setProfile(null); return; }
+      try { const profileData = await getProfile(user.id); if (!cancelled) setProfile(profileData); }
+      catch (error) { console.error("Erreur chargement données utilisateur :", error); }
     }
-
     loadUserData();
-
-    return () => {
-      cancelled = true;
-    };
+    return () => { cancelled = true; };
   }, [user]);
 
-  function cancelStick() {
-    clearAddMarker();
-
-    setDraftStick(null);
-    setDescription("");
-    setPhoto(null);
-    setOriginType(null);
-  }
+  function cancelStick() { clearAddMarker(); setDraftStick(null); setDescription(""); setPhoto(null); setOriginType(null); }
 
   async function handleDeleteSelectedStick() {
-    if (!selectedStick || !isAdmin) {
-      return;
-    }
-
+    if (!selectedStick || !isAdmin) return;
     const deleted = await deleteStickById(selectedStick.id);
-
-    if (!deleted) {
-      return;
-    }
-
-    setSelectedStick(null);
-    setSelectedAuthor(null);
-
-    await loadRanking();
+    if (!deleted) return;
+    setSelectedStick(null); setSelectedAuthor(null); await loadRanking();
   }
 
-  async function logout() {
-    await supabase.auth.signOut();
-
-    setShowAuth(false);
-    setShowProfile(false);
-  }
+  async function logout() { await supabase.auth.signOut(); setShowAuth(false); setShowProfile(false); }
 
   async function handleSaveStick() {
-    if (!draftStick || !photo || !originType || isSavingStick) {
-      return;
-    }
-
+    if (!draftStick || !photo || !originType || isSavingStick) return;
     setIsSavingStick(true);
-
     try {
-      const newStick = await saveStick({
-        latitude: draftStick.lat,
-        longitude: draftStick.lng,
-        description,
-        photo,
-        originType,
-      });
-
-      if (!newStick) {
-        return;
-      }
-
-      clearAddMarker();
-
-      setDraftStick(null);
-      setDescription("");
-      setPhoto(null);
-      setOriginType(null);
-    } finally {
-      setIsSavingStick(false);
-    }
+      const newStick = await saveStick({ latitude: draftStick.lat, longitude: draftStick.lng, description, photo, originType });
+      if (!newStick) return;
+      clearAddMarker(); setDraftStick(null); setDescription(""); setPhoto(null); setOriginType(null);
+    } finally { setIsSavingStick(false); }
   }
 
   function confirmDraftLocation() {
-    if (!draftLocation) {
-      return;
-    }
-
-    setDraftStick({
-      lng: draftLocation.lng,
-      lat: draftLocation.lat,
-    });
-
-    setDraftLocation(null);
-    setAddMode(false);
+    if (!draftLocation) return;
+    setDraftStick({ lng: draftLocation.lng, lat: draftLocation.lat }); setDraftLocation(null); setAddMode(false);
   }
-
-  function replaceDraftLocation() {
-    setDraftLocation(null);
-    clearAddMarker();
-  }
+  function replaceDraftLocation() { setDraftLocation(null); clearAddMarker(); }
 
   return (
     <>
-      {!user && (
-        <button className="login-button" onClick={() => setShowAuth(true)}>
-          Se connecter
-        </button>
-      )}
-      {showAuth && !user && (
-        <div className="auth-overlay">
-          <Auth />
-        </div>
-      )}
-      {user && (
-        <UserPanel
-          profile={profile}
-          onLogout={logout}
-          onOpenProfile={openProfile}
-        />
-      )}
-      <button
-        className="add-stick-button"
-        onClick={() => {
-          if (!userLocation) {
-            setAddMode(true);
-          } else {
-            setDraftLocation({
-              lng: userLocation.longitude,
-              lat: userLocation.latitude,
-            });
-            setAddMode(true);
-          }
-        }}
-        disabled={!user}
-      >
-        + Ajouter un stick
-      </button>
-      {draftLocation && (
-        <div className="location-confirmation">
-          <p>📍 Emplacement sélectionné</p>
+      {!user && <button className="login-button" onClick={() => setShowAuth(true)}>Se connecter</button>}
+      {showAuth && !user && <div className="auth-overlay"><Auth /></div>}
+      {user && <UserPanel profile={profile} onLogout={logout} onOpenProfile={openProfile} />}
+      <button className="add-stick-button" onClick={() => { if (!userLocation) setAddMode(true); else { setDraftLocation({ lng: userLocation.longitude, lat: userLocation.latitude }); setAddMode(true); } }} disabled={!user}>+ Ajouter un stick</button>
+      {draftLocation && <div className="location-confirmation"><p>📍 Emplacement sélectionné</p><button onClick={replaceDraftLocation}>↩️ Replacer</button><button onClick={confirmDraftLocation}>✅ Valider la position</button></div>}
 
-          <button onClick={replaceDraftLocation}>↩️ Replacer</button>
+      {showProfile && profile && <ProfilePanel
+        profile={profile} sticks={userSticks} ranking={ranking} friendships={friendships}
+        onClose={() => setShowProfile(false)}
+        onOpenFriends={() => { setShowProfile(false); setShowFriends(true); }}
+        onSelectStick={(stick) => { setShowProfile(false); setSelectedStick(stick); loadStickAuthor(stick.user_id); loadStickHistory(stick.id); }}
+        onUsernameUpdated={(username) => setProfile((current) => current ? { ...current, username } : current)}
+        onAcceptFriend={acceptFriend}
+        onRejectFriend={rejectFriend}
+      />}
 
-          <button onClick={confirmDraftLocation}>✅ Valider la position</button>
-        </div>
-      )}
-      {showProfile && profile && (
-        <ProfilePanel
-          profile={profile}
-          sticks={userSticks}
-          ranking={ranking}
-          friendships={friendships}
+      {showFriends && user && <FriendsPanel
+        friends={friendProfiles}
+        pendingRequests={pendingFriendRequests}
+        requesterProfiles={requesterProfiles}
+        onSearch={handleFriendSearch}
+        onAcceptFriend={acceptFriend}
+        onRejectFriend={rejectFriend}
+        onSelectUser={openPublicProfile}
+        onClose={() => setShowFriends(false)}
+      />}
 
-          onClose={() => setShowProfile(false)}
+      {publicProfile && user && <PublicProfilePanel
+        profile={publicProfile}
+        friendship={publicProfileFriendship}
+        currentUserId={user.id}
+        stickCount={0}
+        onSendRequest={handleSendFriendRequest}
+        onClose={closePublicProfile}
+      />}
 
-          onOpenFriends={() => {
-            setShowProfile(false);
-            setShowFriends(true);
-          }}
+      {showRanking && <Ranking
+        ranking={displayedRanking}
+        mode={rankingMode}
+        onModeChange={setRankingMode}
+        onSelectUser={openPublicProfile}
+      />}
 
-          onSelectStick={(stick) => {
-            setShowProfile(false);
-            setSelectedStick(stick);
+      {draftStick && <StickForm
+        draftStick={draftStick}
+        description={description}
+        photo={photo}
+        originType={originType}
+        isSavingStick={isSavingStick}
+        onDescriptionChange={setDescription}
+        onPhotoChange={setPhoto}
+        onOriginTypeChange={setOriginType}
+        onSave={handleSaveStick}
+        onCancel={cancelStick}
+      />}
 
-            loadStickAuthor(stick.user_id);
-            loadStickHistory(stick.id);
-          }}
+      {selectedStick && <StickDetails
+        stick={selectedStick}
+        author={selectedAuthor}
+        lastActivityAuthor={lastActivityAuthor}
+        confirmations={confirmations}
+        reports={reports}
+        isAdmin={isAdmin}
+        isConfirmingStick={isConfirmingStick}
+        isReportingStick={isReportingStick}
+        currentUserId={user?.id ?? null}
+        onConfirm={() => confirmStick(selectedStick.id)}
+        onReportMissing={() => reportMissingStick(selectedStick.id)}
+        onDelete={handleDeleteSelectedStick}
+        onOpenAuthor={openPublicProfile}
+        onClose={() => setSelectedStick(null)}
+        photoUrl={getStickPhotoUrl(selectedStick.photo_path)}
+      />}
 
-          onUsernameUpdated={(username) => {
-            setProfile((current) =>
-              current
-                ? {
-                    ...current,
-                    username,
-                  }
-                : current,
-            );
-          }}
-        />
-      )}
-      {showFriends && user && (
-        <FriendsPanel
-          user={user}
-          friendships={friendships}
-          friendProfiles={friendProfiles}
-          requesterProfiles={requesterProfiles}
-          pendingFriendRequests={pendingFriendRequests}
-          onSearch={handleFriendSearch}
-          onAccept={acceptFriend}
-          onReject={rejectFriend}
-          onOpenProfile={openPublicProfile}
-          onClose={() => setShowFriends(false)}
-        />
-      )}
-      {publicProfile && (
-        <PublicProfilePanel
-          profile={publicProfile}
-          friendship={publicProfileFriendship}
-          currentUser={user}
-          onSendFriendRequest={handleSendFriendRequest}
-          onClose={closePublicProfile}
-        />
-      )}
-      {showRanking && (
-        <Ranking
-          ranking={displayedRanking}
-          mode={rankingMode}
-          onModeChange={setRankingMode}
-          onClose={() => setShowRanking(false)}
-        />
-      )}
-      {draftStick && (
-        <StickForm
-          description={description}
-          photo={photo}
-          originType={originType}
-          isSaving={isSavingStick}
-          onDescriptionChange={setDescription}
-          onPhotoChange={setPhoto}
-          onOriginTypeChange={setOriginType}
-          onSubmit={handleSaveStick}
-          onCancel={cancelStick}
-        />
-      )}
-      {selectedStick && (
-        <StickDetails
-          stick={selectedStick}
-          selectedAuthor={selectedAuthor}
-          lastActivityAuthor={lastActivityAuthor}
-          confirmations={confirmations}
-          reports={reports}
-          isAdmin={isAdmin}
-          isConfirming={isConfirmingStick}
-          isReporting={isReportingStick}
-          onConfirm={() => confirmStick(selectedStick.id)}
-          onReportMissing={() => reportMissingStick(selectedStick.id)}
-          onDelete={handleDeleteSelectedStick}
-          onOpenProfile={openPublicProfile}
-          onClose={() => setSelectedStick(null)}
-          getPhotoUrl={getStickPhotoUrl}
-        />
-      )}
-      {showValidation && user && (
-        <ValidationPanel
-          sticks={pendingSticks}
-          currentIndex={validationIndex}
-          onIndexChange={setValidationIndex}
-          onVote={handleValidationVote}
-          onClose={() => setShowValidation(false)}
-          getPhotoUrl={getStickPhotoUrl}
-        />
-      )}
-      {showAdminModeration && isAdmin && (
-        <AdminModerationPanel
-          sticks={reviewSticks}
-          currentIndex={adminModerationIndex}
-          onIndexChange={setAdminModerationIndex}
-          onApprove={handleAdminApproveStick}
-          onReject={handleAdminRejectStick}
-          onClose={() => setShowAdminModeration(false)}
-          getPhotoUrl={getStickPhotoUrl}
-        />
-      )}
-      {user && (
-        <div className="bottom-actions">
-          <button onClick={() => setShowRanking(true)}>Classement</button>
-          <button onClick={() => setShowValidation(true)}>Valider</button>
-          {isAdmin && (
-            <button onClick={() => setShowAdminModeration(true)}>
-              Modération
-            </button>
-          )}
-        </div>
-      )}
-      {toastMessage && (
-        <Toast message={toastMessage} onClose={() => setToastMessage(null)} />
-      )}
-      <Analytics />
-      <SpeedInsights />
+      {showValidation && user && <ValidationPanel
+        sticks={pendingSticks}
+        currentIndex={validationIndex}
+        onApprove={(stick) => void handleValidationVote(stick, "approve")}
+        onReject={(stick) => void handleValidationVote(stick, "reject")}
+        onNext={() => setValidationIndex((index) => Math.min(index + 1, Math.max(0, pendingSticks.length - 1)))}
+        onPrevious={() => setValidationIndex((index) => Math.max(0, index - 1))}
+        onClose={() => setShowValidation(false)}
+        getPhotoUrl={getStickPhotoUrl}
+      />}
+
+      {showAdminModeration && isAdmin && <AdminModerationPanel
+        sticks={reviewSticks}
+        currentIndex={adminModerationIndex}
+        onApprove={(stick) => void handleAdminApproveStick(stick)}
+        onReject={(stick) => void handleAdminRejectStick(stick)}
+        onNext={() => setAdminModerationIndex((index) => Math.min(index + 1, Math.max(0, reviewSticks.length - 1)))}
+        onPrevious={() => setAdminModerationIndex((index) => Math.max(0, index - 1))}
+        onClose={() => setShowAdminModeration(false)}
+        getPhotoUrl={getStickPhotoUrl}
+      />}
+
+      {user && <div className="bottom-actions"><button onClick={() => setShowRanking(true)}>Classement</button><button onClick={() => setShowValidation(true)}>Valider</button>{isAdmin && <button onClick={() => setShowAdminModeration(true)}>Modération</button>}</div>}
+      {toastMessage && <Toast message={toastMessage} onClose={() => setToastMessage(null)} />}
+      <Analytics /><SpeedInsights />
     </>
   );
 }
