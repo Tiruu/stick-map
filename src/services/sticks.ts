@@ -68,17 +68,18 @@ export async function createStick({
 export async function getConfirmations(
   stickId: string,
 ): Promise<StickConfirmation[]> {
-  const { data, error } = await supabase
-    .from("stick_confirmations")
-    .select("*")
-    .eq("stick_id", stickId)
-    .order("updated_at", { ascending: false });
+  const { data, error } = await supabase.rpc(
+    "get_latest_stick_confirmation",
+    {
+      p_stick_id: stickId,
+    },
+  );
 
   if (error) {
     throw error;
   }
 
-  return data;
+  return (data ?? []) as StickConfirmation[];
 }
 
 export async function confirmStickPresence(
@@ -98,17 +99,15 @@ export async function confirmStickPresence(
 }
 
 export async function getReports(stickId: string): Promise<StickReport[]> {
-  const { data, error } = await supabase
-    .from("stick_reports")
-    .select("*")
-    .eq("stick_id", stickId)
-    .order("updated_at", { ascending: false });
+  const { data, error } = await supabase.rpc("get_latest_stick_report", {
+    p_stick_id: stickId,
+  });
 
   if (error) {
     throw error;
   }
 
-  return data;
+  return (data ?? []) as StickReport[];
 }
 
 export async function reportStickMissing(
@@ -128,96 +127,38 @@ export async function reportStickMissing(
 }
 
 export async function getStickStatuses(): Promise<Record<string, StickStatus>> {
-  const REPORT_THRESHOLD = 4;
+  const { data, error } = await supabase.rpc("get_stick_statuses");
 
-  const [confirmationsResult, reportsResult] = await Promise.all([
-    supabase
-      .from("stick_confirmations")
-      .select("*")
-      .order("updated_at", { ascending: false }),
-
-    supabase
-      .from("stick_reports")
-      .select("*")
-      .order("updated_at", { ascending: false }),
-  ]);
-
-  if (confirmationsResult.error) {
-    throw confirmationsResult.error;
+  if (error) {
+    throw error;
   }
-
-  if (reportsResult.error) {
-    throw reportsResult.error;
-  }
-
-  const confirmations = confirmationsResult.data as StickConfirmation[];
-
-  const reports = reportsResult.data as StickReport[];
 
   const statuses: Record<string, StickStatus> = {};
 
-  const stickIds = new Set([
-    ...confirmations.map((confirmation) => confirmation.stick_id),
-
-    ...reports.map((report) => report.stick_id),
-  ]);
-
-  for (const stickId of stickIds) {
-    const stickConfirmations = confirmations.filter(
-      (confirmation) => confirmation.stick_id === stickId,
-    );
-
-    const stickReports = reports.filter(
-      (report) => report.stick_id === stickId,
-    );
-
-    const latestConfirmation = stickConfirmations[0];
-
-    const latestReport = stickReports[0];
-
-    // Aucun signalement suffisant
-    if (stickReports.length < REPORT_THRESHOLD) {
-      statuses[stickId] = latestConfirmation ? "present" : "unknown";
-
-      continue;
-    }
-
-    // 4 signalements ou plus, aucune confirmation
-    if (!latestConfirmation) {
-      statuses[stickId] = "missing";
-      continue;
-    }
-
-    // 4 signalements ou plus + confirmation :
-    // on regarde ce qui est le plus récent
-    const confirmationDate = new Date(latestConfirmation.updated_at).getTime();
-
-    const reportDate = new Date(latestReport.updated_at).getTime();
-
-    statuses[stickId] = confirmationDate > reportDate ? "present" : "missing";
+  for (const row of data ?? []) {
+    statuses[row.stick_id] = row.status as StickStatus;
   }
 
   return statuses;
 }
 
-export async function deleteStick(
-  stickId: string,
-  photoPath: string | null,
-): Promise<void> {
+export async function deleteStick(stickId: string): Promise<void> {
+  const { data: photoPath, error } = await supabase.rpc("delete_stick_admin", {
+    p_stick_id: stickId,
+  });
+
+  if (error) {
+    throw error;
+  }
+
   if (photoPath) {
     const { error: storageError } = await supabase.storage
       .from("stick-photos")
-      .remove([photoPath]);
+      .remove([photoPath as string]);
 
     if (storageError) {
       throw storageError;
     }
-  }
-
-  const { error } = await supabase.from("sticks").delete().eq("id", stickId);
-
-  if (error) {
-    throw error;
   }
 }
 
@@ -284,12 +225,10 @@ export async function getReviewSticks(): Promise<Stick[]> {
 }
 
 export async function approveReviewedStick(stickId: string): Promise<void> {
-  const { error } = await supabase
-    .from("sticks")
-    .update({
-      moderation_status: "approved",
-    })
-    .eq("id", stickId);
+  const { error } = await supabase.rpc("moderate_reviewed_stick", {
+    p_stick_id: stickId,
+    p_status: "approved",
+  });
 
   if (error) {
     throw error;
@@ -297,12 +236,10 @@ export async function approveReviewedStick(stickId: string): Promise<void> {
 }
 
 export async function rejectReviewedStick(stickId: string): Promise<void> {
-  const { error } = await supabase
-    .from("sticks")
-    .update({
-      moderation_status: "rejected",
-    })
-    .eq("id", stickId);
+  const { error } = await supabase.rpc("moderate_reviewed_stick", {
+    p_stick_id: stickId,
+    p_status: "rejected",
+  });
 
   if (error) {
     throw error;

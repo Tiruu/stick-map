@@ -196,13 +196,13 @@ export function useSticks({ user, isAdmin, onError }: UseSticksOptions) {
   );
 
   const deleteStickById = useCallback(
-    async (stickId: string, photoPath: string | null) => {
+    async (stickId: string) => {
       if (!isAdmin) {
         return false;
       }
 
       try {
-        await deleteStick(stickId, photoPath);
+        await deleteStick(stickId);
 
         setSticks((current) => current.filter((stick) => stick.id !== stickId));
 
@@ -227,22 +227,18 @@ export function useSticks({ user, isAdmin, onError }: UseSticksOptions) {
   return {
     sticks,
     setSticks,
-
     stickStatuses,
-
     confirmations,
     reports,
-
+    isConfirmingStick,
+    isReportingStick,
+    saveStick,
+    confirmStick,
+    reportMissingStick,
+    deleteStickById,
     loadSticks,
     loadStickStatuses,
     loadConfirmations,
     loadReports,
-
-    saveStick,
-    confirmStick,
-    isConfirmingStick,
-    isReportingStick,
-    reportMissingStick,
-    deleteStickById,
   };
 }
