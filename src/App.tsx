@@ -138,7 +138,7 @@ function App() {
 
   async function handleDeleteSelectedStick() {
     if (!selectedStick || !isAdmin) return;
-    const deleted = await deleteStickById(selectedStick.id);
+    const deleted = await deleteStickById(selectedStick.id, selectedStick.photo_path);
     if (!deleted) return;
     setSelectedStick(null); setSelectedAuthor(null); await loadRanking();
   }
@@ -163,7 +163,7 @@ function App() {
 
   return (
     <>
-      <div ref={mapContainer} className="map-container" />
+      <div ref={mapContainer} className="map" />
       {!user && <button className="login-button" onClick={() => setShowAuth(true)}>Se connecter</button>}
       {showAuth && !user && <div className="auth-overlay"><Auth /></div>}
       {user && <UserPanel profile={profile} onLogout={logout} onOpenProfile={openProfile} />}
@@ -175,7 +175,7 @@ function App() {
         onClose={() => setShowProfile(false)}
         onOpenFriends={() => { setShowProfile(false); setShowFriends(true); }}
         onSelectStick={(stick) => { setShowProfile(false); setSelectedStick(stick); loadStickAuthor(stick.user_id); loadStickHistory(stick.id); }}
-        onUsernameUpdated={(username) => setProfile((current) => current ? { ...current, username } : current)}
+        onUsernameUpdated={(username) => { setProfile((current) => current ? { ...current, username } : current); loadRanking(); }}
         onAcceptFriend={acceptFriend}
         onRejectFriend={rejectFriend}
       />}
@@ -187,7 +187,7 @@ function App() {
         onSearch={handleFriendSearch}
         onAcceptFriend={acceptFriend}
         onRejectFriend={rejectFriend}
-        onSelectUser={openPublicProfile}
+        onSelectUser={(userId) => { setShowFriends(false); openPublicProfile(userId); }}
         onClose={() => setShowFriends(false)}
       />}
 
@@ -195,17 +195,39 @@ function App() {
         profile={publicProfile}
         friendship={publicProfileFriendship}
         currentUserId={user.id}
-        stickCount={0}
+        stickCount={ranking.find((entry) => entry.user_id === publicProfile.id)?.stick_count ?? 0}
         onSendRequest={handleSendFriendRequest}
         onClose={closePublicProfile}
       />}
 
-      {showRanking && <Ranking
-        ranking={displayedRanking}
-        mode={rankingMode}
-        onModeChange={setRankingMode}
-        onSelectUser={openPublicProfile}
+      {user && pendingSticks.length > 0 && <button className="validation-button" onClick={() => { setValidationIndex(0); setShowValidation(true); }}>🔔 {pendingSticks.length} stick{pendingSticks.length > 1 ? "s" : ""} à valider</button>}
+
+      {showValidation && <ValidationPanel
+        sticks={pendingSticks}
+        currentIndex={validationIndex}
+        onApprove={(stick) => void handleValidationVote(stick, "approve")}
+        onReject={(stick) => void handleValidationVote(stick, "reject")}
+        onNext={() => setValidationIndex((current) => Math.min(pendingSticks.length - 1, current + 1))}
+        onPrevious={() => setValidationIndex((current) => Math.max(0, current - 1))}
+        onClose={() => setShowValidation(false)}
+        getPhotoUrl={getStickPhotoUrl}
       />}
+
+      {isAdmin && reviewSticks.length > 0 && <button className="admin-moderation-button" onClick={() => { setAdminModerationIndex(0); setShowAdminModeration(true); }}>🛡️ Modération ({reviewSticks.length})</button>}
+
+      {showAdminModeration && isAdmin && <AdminModerationPanel
+        sticks={reviewSticks}
+        currentIndex={adminModerationIndex}
+        onApprove={(stick) => void handleAdminApproveStick(stick)}
+        onReject={(stick) => void handleAdminRejectStick(stick)}
+        onNext={() => setAdminModerationIndex((current) => Math.min(reviewSticks.length - 1, current + 1))}
+        onPrevious={() => setAdminModerationIndex((current) => Math.max(0, current - 1))}
+        onClose={() => setShowAdminModeration(false)}
+        getPhotoUrl={getStickPhotoUrl}
+      />}
+
+      <button className="ranking-button" onClick={() => setShowRanking(true)}>🏆 Classement</button>
+      {showRanking && <div className="ranking-overlay"><div className="ranking-modal"><button className="close-ranking" onClick={() => setShowRanking(false)}>✕</button><Ranking ranking={displayedRanking} mode={rankingMode} onModeChange={setRankingMode} onSelectUser={openPublicProfile} /></div></div>}
 
       {draftStick && <StickForm
         draftStick={draftStick}
@@ -223,46 +245,25 @@ function App() {
       {selectedStick && <StickDetails
         stick={selectedStick}
         author={selectedAuthor}
-        lastActivityAuthor={lastActivityAuthor}
         confirmations={confirmations}
         reports={reports}
-        isAdmin={isAdmin}
+        lastActivityAuthor={lastActivityAuthor}
+        currentUserId={user?.id ?? null}
+        photoUrl={selectedStick.photo_path ? getStickPhotoUrl(selectedStick.photo_path) : null}
+        onClose={() => { setSelectedStick(null); setSelectedAuthor(null); }}
+        onConfirm={() => confirmStick(selectedStick.id)}
         isConfirmingStick={isConfirmingStick}
         isReportingStick={isReportingStick}
-        currentUserId={user?.id ?? null}
-        onConfirm={() => confirmStick(selectedStick.id)}
         onReportMissing={() => reportMissingStick(selectedStick.id)}
+        isAdmin={isAdmin}
         onDelete={handleDeleteSelectedStick}
-        onOpenAuthor={openPublicProfile}
-        onClose={() => setSelectedStick(null)}
-        photoUrl={getStickPhotoUrl(selectedStick.photo_path)}
+        onOpenAuthor={(userId) => { setSelectedStick(null); openPublicProfile(userId); }}
       />}
 
-      {showValidation && user && <ValidationPanel
-        sticks={pendingSticks}
-        currentIndex={validationIndex}
-        onApprove={(stick) => void handleValidationVote(stick, "approve")}
-        onReject={(stick) => void handleValidationVote(stick, "reject")}
-        onNext={() => setValidationIndex((index) => Math.min(index + 1, Math.max(0, pendingSticks.length - 1)))}
-        onPrevious={() => setValidationIndex((index) => Math.max(0, index - 1))}
-        onClose={() => setShowValidation(false)}
-        getPhotoUrl={getStickPhotoUrl}
-      />}
-
-      {showAdminModeration && isAdmin && <AdminModerationPanel
-        sticks={reviewSticks}
-        currentIndex={adminModerationIndex}
-        onApprove={(stick) => void handleAdminApproveStick(stick)}
-        onReject={(stick) => void handleAdminRejectStick(stick)}
-        onNext={() => setAdminModerationIndex((index) => Math.min(index + 1, Math.max(0, reviewSticks.length - 1)))}
-        onPrevious={() => setAdminModerationIndex((index) => Math.max(0, index - 1))}
-        onClose={() => setShowAdminModeration(false)}
-        getPhotoUrl={getStickPhotoUrl}
-      />}
-
-      {user && <div className="bottom-actions"><button onClick={() => setShowRanking(true)}>Classement</button><button onClick={() => setShowValidation(true)}>Valider</button>{isAdmin && <button onClick={() => setShowAdminModeration(true)}>Modération</button>}</div>}
+      {isAdmin && <div className="admin-panel"><strong>Mode développeur</strong></div>}
       {toastMessage && <Toast message={toastMessage} onClose={() => setToastMessage(null)} />}
-      <Analytics /><SpeedInsights />
+      <SpeedInsights />
+      <Analytics />
     </>
   );
 }
