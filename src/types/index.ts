@@ -34,19 +34,15 @@ export type RankingEntry = {
 };
 
 export type StickConfirmation = {
-  id: string;
   stick_id: string;
-  user_id: string;
-  created_at: string;
+  username: string | null;
   updated_at: string;
 };
 
 export type StickReport = {
-  id: string;
   stick_id: string;
-  user_id: string;
+  username: string | null;
   reason: string;
-  created_at: string;
   updated_at: string;
 };
 
