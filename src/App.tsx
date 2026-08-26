@@ -350,10 +350,7 @@ function App() {
       return;
     }
 
-    const deleted = await deleteStickById(
-      selectedStick.id,
-      selectedStick.photo_path,
-    );
+    const deleted = await deleteStickById(selectedStick.id);
 
     if (!deleted) {
       return;
@@ -498,189 +495,108 @@ function App() {
                   }
                 : current,
             );
-
-            loadRanking();
           }}
-
-          onAcceptFriend={acceptFriend}
-          onRejectFriend={rejectFriend}
-        />
-      )}
-      {publicProfile && user && (
-        <PublicProfilePanel
-          profile={publicProfile}
-          currentUserId={user.id}
-          friendship={publicProfileFriendship}
-          stickCount={
-            ranking.find((entry) => entry.user_id === publicProfile.id)
-              ?.stick_count ?? 0
-          }
-          onClose={closePublicProfile}
-          onSendRequest={handleSendFriendRequest}
         />
       )}
       {showFriends && user && (
         <FriendsPanel
-          friends={friendProfiles}
-          pendingRequests={pendingFriendRequests}
+          user={user}
+          friendships={friendships}
+          friendProfiles={friendProfiles}
           requesterProfiles={requesterProfiles}
-          onClose={() => setShowFriends(false)}
-          onSelectUser={(userId) => {
-            setShowFriends(false);
-            openPublicProfile(userId);
-          }}
-          onAcceptFriend={acceptFriend}
-          onRejectFriend={rejectFriend}
+          pendingFriendRequests={pendingFriendRequests}
           onSearch={handleFriendSearch}
+          onAccept={acceptFriend}
+          onReject={rejectFriend}
+          onOpenProfile={openPublicProfile}
+          onClose={() => setShowFriends(false)}
         />
       )}
-      {user && pendingSticks.length > 0 && (
-        <button
-          className="validation-button"
-          onClick={() => {
-            setValidationIndex(0);
-            setShowValidation(true);
-          }}
-        >
-          🔔 {pendingSticks.length} stick
-          {pendingSticks.length > 1 ? "s" : ""} à valider
-        </button>
+      {publicProfile && (
+        <PublicProfilePanel
+          profile={publicProfile}
+          friendship={publicProfileFriendship}
+          currentUser={user}
+          onSendFriendRequest={handleSendFriendRequest}
+          onClose={closePublicProfile}
+        />
       )}
-      {showValidation && (
+      {showRanking && (
+        <Ranking
+          ranking={displayedRanking}
+          mode={rankingMode}
+          onModeChange={setRankingMode}
+          onClose={() => setShowRanking(false)}
+        />
+      )}
+      {draftStick && (
+        <StickForm
+          description={description}
+          photo={photo}
+          originType={originType}
+          isSaving={isSavingStick}
+          onDescriptionChange={setDescription}
+          onPhotoChange={setPhoto}
+          onOriginTypeChange={setOriginType}
+          onSubmit={handleSaveStick}
+          onCancel={cancelStick}
+        />
+      )}
+      {selectedStick && (
+        <StickDetails
+          stick={selectedStick}
+          selectedAuthor={selectedAuthor}
+          lastActivityAuthor={lastActivityAuthor}
+          confirmations={confirmations}
+          reports={reports}
+          isAdmin={isAdmin}
+          isConfirming={isConfirmingStick}
+          isReporting={isReportingStick}
+          onConfirm={() => confirmStick(selectedStick.id)}
+          onReportMissing={() => reportMissingStick(selectedStick.id)}
+          onDelete={handleDeleteSelectedStick}
+          onOpenProfile={openPublicProfile}
+          onClose={() => setSelectedStick(null)}
+          getPhotoUrl={getStickPhotoUrl}
+        />
+      )}
+      {showValidation && user && (
         <ValidationPanel
           sticks={pendingSticks}
           currentIndex={validationIndex}
-          getPhotoUrl={getStickPhotoUrl}
-
+          onIndexChange={setValidationIndex}
+          onVote={handleValidationVote}
           onClose={() => setShowValidation(false)}
-
-          onApprove={(stick) => handleValidationVote(stick, "approve")}
-
-          onReject={(stick) => handleValidationVote(stick, "reject")}
-
-          onPrevious={() =>
-            setValidationIndex((current) => Math.max(0, current - 1))
-          }
-
-          onNext={() =>
-            setValidationIndex((current) =>
-              Math.min(pendingSticks.length - 1, current + 1),
-            )
-          }
+          getPhotoUrl={getStickPhotoUrl}
         />
-      )}
-      {isAdmin && reviewSticks.length > 0 && (
-        <button
-          className="admin-moderation-button"
-          onClick={() => {
-            setAdminModerationIndex(0);
-            setShowAdminModeration(true);
-          }}
-        >
-          🛡️ Modération ({reviewSticks.length})
-        </button>
       )}
       {showAdminModeration && isAdmin && (
         <AdminModerationPanel
           sticks={reviewSticks}
           currentIndex={adminModerationIndex}
-          getPhotoUrl={getStickPhotoUrl}
-
-          onClose={() => setShowAdminModeration(false)}
-
+          onIndexChange={setAdminModerationIndex}
           onApprove={handleAdminApproveStick}
           onReject={handleAdminRejectStick}
-
-          onPrevious={() =>
-            setAdminModerationIndex((current) => Math.max(0, current - 1))
-          }
-
-          onNext={() =>
-            setAdminModerationIndex((current) =>
-              Math.min(reviewSticks.length - 1, current + 1),
-            )
-          }
+          onClose={() => setShowAdminModeration(false)}
+          getPhotoUrl={getStickPhotoUrl}
         />
       )}
-
-      <button className="ranking-button" onClick={() => setShowRanking(true)}>
-        🏆 Classement
-      </button>
-
-      {showRanking && (
-        <div className="ranking-overlay">
-          <div className="ranking-modal">
-            <button
-              className="close-ranking"
-              onClick={() => setShowRanking(false)}
-            >
-              ✕
+      {user && (
+        <div className="bottom-actions">
+          <button onClick={() => setShowRanking(true)}>Classement</button>
+          <button onClick={() => setShowValidation(true)}>Valider</button>
+          {isAdmin && (
+            <button onClick={() => setShowAdminModeration(true)}>
+              Modération
             </button>
-            <Ranking
-              ranking={displayedRanking}
-              mode={rankingMode}
-              onModeChange={setRankingMode}
-              onSelectUser={openPublicProfile}
-            />
-          </div>
-        </div>
-      )}
-
-      {draftStick && (
-        <StickForm
-          draftStick={draftStick}
-          description={description}
-          photo={photo}
-          originType={originType}
-          isSavingStick={isSavingStick}
-          onDescriptionChange={setDescription}
-          onPhotoChange={setPhoto}
-          onOriginTypeChange={setOriginType}
-          onSave={handleSaveStick}
-          onCancel={cancelStick}
-        />
-      )}
-
-      {selectedStick && (
-        <StickDetails
-          stick={selectedStick}
-          author={selectedAuthor}
-          confirmations={confirmations}
-          reports={reports}
-          lastActivityAuthor={lastActivityAuthor}
-          currentUserId={user?.id ?? null}
-          photoUrl={
-            selectedStick.photo_path
-              ? getStickPhotoUrl(selectedStick.photo_path)
-              : null
-          }
-          onClose={() => {
-            setSelectedStick(null);
-            setSelectedAuthor(null);
-          }}
-          onConfirm={() => confirmStick(selectedStick.id)}
-          isConfirmingStick={isConfirmingStick}
-          isReportingStick={isReportingStick}
-          onReportMissing={() => reportMissingStick(selectedStick.id)}
-          isAdmin={isAdmin}
-          onDelete={handleDeleteSelectedStick}
-          onOpenAuthor={(userId) => {
-            setSelectedStick(null);
-            openPublicProfile(userId);
-          }}
-        />
-      )}
-      {isAdmin && (
-        <div className="admin-panel">
-          <strong>Mode développeur</strong>
+          )}
         </div>
       )}
       {toastMessage && (
         <Toast message={toastMessage} onClose={() => setToastMessage(null)} />
       )}
-      <div ref={mapContainer} className="map" />
-      <SpeedInsights />
       <Analytics />
+      <SpeedInsights />
     </>
   );
 }
