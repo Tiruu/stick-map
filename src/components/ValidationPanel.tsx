@@ -4,7 +4,7 @@ type ValidationPanelProps = {
   sticks: Stick[];
   currentIndex: number;
 
-  getPhotoUrl: (path: string) => string;
+  getPhotoUrl: (path: string | null) => string | null;
 
   onClose: () => void;
   onApprove: (stick: Stick) => void;
@@ -68,7 +68,7 @@ export default function ValidationPanel({
 
         {stick.photo_path && (
           <img
-            src={getPhotoUrl(stick.photo_path)}
+            src={getPhotoUrl(stick.photo_path) ?? undefined}
             alt="Stick à valider"
             className="validation-photo"
           />
