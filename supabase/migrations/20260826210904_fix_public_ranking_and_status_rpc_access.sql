@@ -42,3 +42,4 @@ REVOKE ALL ON FUNCTION public.get_contributor_ranking() FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION public.get_contributor_ranking() TO anon;
 GRANT EXECUTE ON FUNCTION public.get_contributor_ranking() TO authenticated;
 GRANT EXECUTE ON FUNCTION public.get_contributor_ranking() TO service_role;
+GRANT EXECUTE ON FUNCTION public.get_contributor_ranking() TO service_role;
